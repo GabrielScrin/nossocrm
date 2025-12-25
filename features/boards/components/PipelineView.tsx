@@ -20,6 +20,7 @@ interface PipelineViewProps {
   activeBoardId: string | null;
   handleSelectBoard: (id: string) => void;
   handleCreateBoard: (board: Omit<Board, 'id' | 'createdAt'>, order?: number) => void;
+  createBoardAsync?: (board: Omit<Board, 'id' | 'createdAt'>, order?: number) => Promise<Board>;
   handleEditBoard: (board: Board) => void;
   handleUpdateBoard: (board: Omit<Board, 'id' | 'createdAt'>) => void;
   handleDeleteBoard: (id: string) => void;
@@ -82,6 +83,7 @@ export const PipelineView: React.FC<PipelineViewProps> = ({
   activeBoardId,
   handleSelectBoard,
   handleCreateBoard,
+  createBoardAsync,
   handleEditBoard,
   handleUpdateBoard,
   handleDeleteBoard,
@@ -272,6 +274,7 @@ export const PipelineView: React.FC<PipelineViewProps> = ({
           onClose={() => setIsExportModalOpen(false)}
           boards={boards}
           activeBoard={activeBoard}
+          onCreateBoardAsync={createBoardAsync}
         />
       )}
     </div>

@@ -489,6 +489,22 @@ export const useBoardsController = () => {
     });
   };
 
+  /**
+   * Async variant used for flows that must preserve order (ex.: importing a Journey JSON).
+   * Uses mutateAsync to allow sequential creation without race conditions.
+   */
+  const createBoardAsync = async (boardData: Omit<Board, 'id' | 'createdAt'>, order?: number) => {
+    try {
+      const newBoard = await createBoardMutation.mutateAsync({ board: boardData, order });
+      return newBoard;
+    } catch (error) {
+      const err = error as Error;
+      console.error('[createBoardAsync] Error:', err);
+      addToast(err.message || 'Erro ao criar board', 'error');
+      throw err;
+    }
+  };
+
   const handleEditBoard = (board: Board) => {
     setEditingBoard(board);
     setIsCreateBoardModalOpen(true);
@@ -631,6 +647,7 @@ export const useBoardsController = () => {
     activeBoardId: effectiveActiveBoardId, // Sempre retorna o ID válido
     handleSelectBoard,
     handleCreateBoard,
+    createBoardAsync,
     handleEditBoard,
     handleUpdateBoard,
     handleDeleteBoard,

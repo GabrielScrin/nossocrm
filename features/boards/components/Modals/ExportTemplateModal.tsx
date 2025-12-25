@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Copy, Download, ArrowUp, ArrowDown } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
-import type { Board, JourneyDefinition, RegistryTemplate } from '@/types';
+import type { Board, BoardStage, JourneyDefinition, RegistryTemplate } from '@/types';
 import { useToast } from '@/context/ToastContext';
+import { z } from 'zod';
 
 function slugify(input: string) {
   // NOTE: avoid Unicode property escapes (\p{L}) for broader browser compatibility (Safari).
@@ -87,16 +88,53 @@ function buildJourneyFromBoards(
 }
 
 type Mode = 'board' | 'journey';
+type Panel = 'export' | 'import';
+
+const JourneySchema = z.object({
+  schemaVersion: z.string().min(1),
+  name: z.string().optional(),
+  boards: z.array(z.object({
+    slug: z.string().min(1),
+    name: z.string().min(1),
+    columns: z.array(z.object({
+      name: z.string().min(1),
+      color: z.string().optional(),
+      linkedLifecycleStage: z.string().optional(),
+    })).min(1),
+    strategy: z.object({
+      agentPersona: z.object({
+        name: z.string().optional(),
+        role: z.string().optional(),
+        behavior: z.string().optional(),
+      }).optional(),
+      goal: z.object({
+        description: z.string().optional(),
+        kpi: z.string().optional(),
+        targetValue: z.string().optional(),
+        type: z.string().optional(),
+      }).optional(),
+      entryTrigger: z.string().optional(),
+    }).optional(),
+  })).min(1),
+});
+
+function guessWonLostStageIds(stages: BoardStage[]) {
+  const won = stages.find(s => /\b(ganho|won|fechado ganho|conclu[ií]do)\b/i.test(s.label))?.id;
+  const lost = stages.find(s => /\b(perdido|lost|churn|cancelad[oa])\b/i.test(s.label))?.id;
+  return { wonStageId: won, lostStageId: lost };
+}
 
 export function ExportTemplateModal(props: {
   isOpen: boolean;
   onClose: () => void;
   boards: Board[];
   activeBoard: Board;
+  onCreateBoardAsync?: (board: Omit<Board, 'id' | 'createdAt'>, order?: number) => Promise<Board>;
 }) {
-  const { isOpen, onClose, boards, activeBoard } = props;
+  const { isOpen, onClose, boards, activeBoard, onCreateBoardAsync } = props;
   const { addToast } = useToast();
 
+  const [panel, setPanel] = useState<Panel>('export');
   const [mode, setMode] = useState<Mode>('board');
 
   // Journey metadata
@@ -267,6 +305,97 @@ export function ExportTemplateModal(props: {
     }
   };
 
+  // ============ IMPORT (LOCAL JSON) ============
+  const [importText, setImportText] = useState('');
+  const [importError, setImportError] = useState<string | null>(null);
+  const [importJourney, setImportJourney] = useState<JourneyDefinition | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
+
+  const parseImport = (raw: string) => {
+    setImportText(raw);
+    setImportError(null);
+    setImportJourney(null);
+
+    let parsedJson: unknown;
+    try {
+      parsedJson = JSON.parse(raw);
+    } catch {
+      setImportError('JSON inválido (não consegui fazer parse).');
+      return;
+    }
+
+    const result = JourneySchema.safeParse(parsedJson);
+    if (!result.success) {
+      setImportError('JSON não bate com o schema esperado de Journey (schemaVersion/boards/columns).');
+      return;
+    }
+
+    setImportJourney(result.data as JourneyDefinition);
+  };
+
+  const handleImportFile = async (file: File | null) => {
+    if (!file) return;
+    try {
+      const text = await file.text();
+      parseImport(text);
+    } catch (e) {
+      console.error('[ExportTemplateModal] import file read failed:', e);
+      setImportError('Falha ao ler arquivo.');
+    }
+  };
+
+  const handleInstallImportedJourney = async () => {
+    if (!importJourney) {
+      addToast('Selecione um journey.json válido.', 'error');
+      return;
+    }
+    if (!onCreateBoardAsync) {
+      addToast('Import indisponível nesta tela.', 'error');
+      return;
+    }
+
+    setIsImporting(true);
+    setImportError(null);
+    try {
+      for (let i = 0; i < importJourney.boards.length; i += 1) {
+        const b = importJourney.boards[i];
+        const stages: BoardStage[] = b.columns.map((c) => ({
+          id: crypto.randomUUID(),
+          label: c.name,
+          color: c.color || 'bg-slate-500',
+          linkedLifecycleStage: c.linkedLifecycleStage,
+        }));
+        const guessed = guessWonLostStageIds(stages);
+
+        await onCreateBoardAsync({
+          name: b.name,
+          description: `Parte da jornada: Sim`,
+          linkedLifecycleStage: undefined,
+          template: 'CUSTOM',
+          stages,
+          isDefault: false,
+          wonStageId: guessed.wonStageId,
+          lostStageId: guessed.lostStageId,
+          agentPersona: b.strategy?.agentPersona,
+          goal: b.strategy?.goal,
+          entryTrigger: b.strategy?.entryTrigger,
+        } as any);
+      }
+
+      addToast('Jornada importada com sucesso!', 'success');
+      onClose();
+      setImportText('');
+      setImportError(null);
+      setImportJourney(null);
+      setPanel('export');
+    } catch (e) {
+      console.error('[ExportTemplateModal] install journey failed:', e);
+      setImportError('Falha ao instalar a jornada. Veja o console/toasts.');
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
   return (
     <Modal
       isOpen={isOpen}
@@ -275,29 +404,106 @@ export function ExportTemplateModal(props: {
       size="xl"
       bodyClassName="space-y-6"
     >
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={() => setMode('board')}
-          className={`px-3 py-2 rounded-lg text-sm font-semibold border transition-colors ${mode === 'board'
-            ? 'bg-primary-600 text-white border-primary-600'
-            : 'bg-white dark:bg-white/5 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/10'
-            }`}
-        >
-          Exportar Board
-        </button>
-        <button
-          type="button"
-          onClick={() => setMode('journey')}
-          className={`px-3 py-2 rounded-lg text-sm font-semibold border transition-colors ${mode === 'journey'
-            ? 'bg-primary-600 text-white border-primary-600'
-            : 'bg-white dark:bg-white/5 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/10'
-            }`}
-        >
-          Exportar Jornada
-        </button>
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setPanel('export')}
+            className={`px-3 py-2 rounded-lg text-sm font-semibold border transition-colors ${panel === 'export'
+              ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 border-slate-900 dark:border-white'
+              : 'bg-white dark:bg-white/5 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/10'
+              }`}
+          >
+            Exportar
+          </button>
+          <button
+            type="button"
+            onClick={() => setPanel('import')}
+            className={`px-3 py-2 rounded-lg text-sm font-semibold border transition-colors ${panel === 'import'
+              ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 border-slate-900 dark:border-white'
+              : 'bg-white dark:bg-white/5 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/10'
+              }`}
+          >
+            Importar JSON
+          </button>
+        </div>
+
+        {panel === 'export' && (
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setMode('board')}
+              className={`px-3 py-2 rounded-lg text-sm font-semibold border transition-colors ${mode === 'board'
+                ? 'bg-primary-600 text-white border-primary-600'
+                : 'bg-white dark:bg-white/5 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/10'
+                }`}
+            >
+              Exportar Board
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode('journey')}
+              className={`px-3 py-2 rounded-lg text-sm font-semibold border transition-colors ${mode === 'journey'
+                ? 'bg-primary-600 text-white border-primary-600'
+                : 'bg-white dark:bg-white/5 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/10'
+                }`}
+            >
+              Exportar Jornada
+            </button>
+          </div>
+        )}
       </div>
 
+      {panel === 'import' && (
+        <div className="rounded-xl border border-slate-200 dark:border-white/10 p-4 bg-slate-50/50 dark:bg-white/5 space-y-4">
+          <div>
+            <div className="text-sm font-bold text-slate-900 dark:text-white">Importar `journey.json` (local)</div>
+            <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              Upload de um `journey.json` e instalação imediata dos boards (sem precisar do GitHub/registry).
+            </div>
+          </div>
+
+          <input
+            type="file"
+            accept=".json,application/json"
+            onChange={e => void handleImportFile(e.target.files?.[0] ?? null)}
+            className="block w-full text-sm text-slate-600 dark:text-slate-300"
+          />
+
+          <textarea
+            value={importText}
+            onChange={e => parseImport(e.target.value)}
+            placeholder="Ou cole o conteúdo do journey.json aqui…"
+            className="w-full min-h-44 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-black/30 px-3 py-2 text-xs font-mono"
+          />
+
+          {importError && (
+            <div className="text-sm text-red-600 dark:text-red-400">{importError}</div>
+          )}
+
+          {importJourney && (
+            <div className="text-xs text-slate-600 dark:text-slate-300">
+              <b>Detectado:</b> {importJourney.boards.length} board(s){importJourney.name ? ` • ${importJourney.name}` : ''}
+            </div>
+          )}
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => void handleInstallImportedJourney()}
+              disabled={!importJourney || isImporting}
+              className={`px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 ${(!importJourney || isImporting)
+                ? 'bg-slate-200 dark:bg-white/10 text-slate-400 cursor-not-allowed'
+                : 'bg-primary-600 hover:bg-primary-700 text-white'
+                }`}
+            >
+              <Download size={16} /> {isImporting ? 'Instalando…' : 'Instalar jornada'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {panel === 'export' && (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="space-y-4">
           <div className="rounded-xl border border-slate-200 dark:border-white/10 p-4 bg-slate-50/50 dark:bg-white/5">
@@ -466,6 +672,7 @@ export function ExportTemplateModal(props: {
           </div>
         </div>
       </div>
+      )}
     </Modal>
   );
 }
