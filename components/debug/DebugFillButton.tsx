@@ -6,13 +6,15 @@
 
 import React from 'react';
 import { Sparkles } from 'lucide-react';
-import { isDebugMode, debugButtonStyles } from '@/lib/debug';
+import { debugButtonStyles } from '@/lib/debug';
+import { useDebugMode } from '@/lib/debug/useDebugMode';
 
 interface DebugFillButtonProps {
   onClick: () => void;
   label?: string;
   variant?: 'primary' | 'secondary' | 'danger';
   className?: string;
+  disabled?: boolean;
 }
 
 /**
@@ -36,14 +38,17 @@ export const DebugFillButton: React.FC<DebugFillButtonProps> = ({
   label = 'Fake',
   variant = 'primary',
   className = '',
+  disabled = false,
 }) => {
-  if (!isDebugMode()) return null;
+  const debugEnabled = useDebugMode();
+  if (!debugEnabled) return null;
 
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`${debugButtonStyles.base} ${debugButtonStyles[variant]} ${className}`}
+      disabled={disabled}
+      className={`${debugButtonStyles.base} ${debugButtonStyles[variant]} ${disabled ? 'opacity-60 cursor-not-allowed' : ''} ${className}`}
       title="Preencher com dados fake (Debug Mode)"
     >
       <Sparkles className="w-3 h-3" />

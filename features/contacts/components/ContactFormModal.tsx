@@ -1,4 +1,4 @@
-import React, { useId } from 'react';
+import React, { useId, useState } from 'react';
 import { X } from 'lucide-react';
 import { Contact } from '@/types';
 import { DebugFillButton } from '@/components/debug/DebugFillButton';
@@ -20,6 +20,7 @@ interface ContactFormModalProps {
   formData: ContactFormData;
   setFormData: (data: ContactFormData) => void;
   editingContact: Contact | null;
+  createFakeContactsBatch?: (count: number) => Promise<void>;
 }
 
 /**
@@ -49,9 +50,11 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
   formData,
   setFormData,
   editingContact,
+  createFakeContactsBatch,
 }) => {
   const headingId = useId();
   useFocusReturn({ enabled: isOpen });
+  const [isCreatingBatch, setIsCreatingBatch] = useState(false);
   
   if (!isOpen) return null;
 
@@ -85,6 +88,23 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
                 {editingContact ? 'Editar Contato' : 'Novo Contato'}
               </h2>
               <DebugFillButton onClick={fillWithFakeData} />
+              {createFakeContactsBatch && (
+                <DebugFillButton
+                  onClick={async () => {
+                    setIsCreatingBatch(true);
+                    try {
+                      await createFakeContactsBatch(10);
+                      onClose();
+                    } finally {
+                      setIsCreatingBatch(false);
+                    }
+                  }}
+                  label={isCreatingBatch ? 'Criando...' : 'Fake x10'}
+                  variant="secondary"
+                  className="ml-1"
+                  disabled={isCreatingBatch}
+                />
+              )}
             </div>
             <button
               onClick={onClose}

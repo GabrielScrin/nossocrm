@@ -1,5 +1,18 @@
 # Changelog
 
+## 27/12/2025
+
+- **CRM (reaplicação de mudanças pendentes)**:
+  - Reaplicadas e persistidas no código as melhorias de **Empresas (CRUD + UI padronizada)**, **Inbox (Seed + regra de churn)** e **Atividades (contexto empresa/participantes + ESC no modal)** que estavam visíveis no editor, mas não tinham sido materializadas em commit.
+- **Debug Mode (UX)**:
+  - Debug agora é **reativo** (sem refresh): toggle dispara evento (`DEBUG_MODE_EVENT`) e `DebugFillButton` usa `useDebugMode`.
+  - Fix: geração de telefone fake agora é determinística (sem `fromRegExp`, evitando `\\` no número).
+- **Atividades (contexto)**:
+  - `Activity` suporta `contactId`, `clientCompanyId` e `participantContactIds`.
+  - `activitiesService` agora persiste esses campos (com retry safe quando migration ainda não existe).
+- **Inbox (debug)**:
+  - Botão **Seed Inbox** (apenas em debug) para criar dados que disparam sugestões de **Upsell**, **Stalled** e **Rescue**.
+
 ## 26/12/2025
 
 - **Documentação (JSDoc em pt-BR)**:

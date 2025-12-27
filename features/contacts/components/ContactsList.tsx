@@ -83,6 +83,8 @@ interface ContactsListProps {
     convertContactToDeal: (id: string) => void;
     openEditModal: (contact: Contact) => void;
     setDeleteId: (id: string) => void;
+    openEditCompanyModal?: (company: Company) => void;
+    setDeleteCompanyId?: (id: string) => void;
     // Sorting props
     sortBy?: ContactSortableColumn;
     sortOrder?: 'asc' | 'desc';
@@ -140,12 +142,17 @@ export const ContactsList: React.FC<ContactsListProps> = ({
     convertContactToDeal,
     openEditModal,
     setDeleteId,
+    openEditCompanyModal,
+    setDeleteCompanyId,
     sortBy = 'created_at',
     sortOrder = 'desc',
     onSort,
 }) => {
-    const allSelected = filteredContacts.length > 0 && selectedIds.size === filteredContacts.length;
-    const someSelected = selectedIds.size > 0 && selectedIds.size < filteredContacts.length;
+    const activeListIds = viewMode === 'people'
+        ? filteredContacts.map(c => c.id)
+        : filteredCompanies.map(c => c.id);
+    const allSelected = activeListIds.length > 0 && selectedIds.size === activeListIds.length;
+    const someSelected = selectedIds.size > 0 && selectedIds.size < activeListIds.length;
 
     // Performance: compute "contacts by company" once (avoids N filters per company row).
     const contactsByCompanyId = React.useMemo(() => {
@@ -315,7 +322,14 @@ export const ContactsList: React.FC<ContactsListProps> = ({
                         <thead className="bg-slate-50/80 dark:bg-white/5 border-b border-slate-200 dark:border-white/5">
                             <tr>
                                 <th scope="col" className="w-12 px-6 py-4">
-                                    <input type="checkbox" aria-label="Selecionar todas as empresas" className="rounded border-slate-300 text-primary-600 focus:ring-primary-500 dark:bg-white/5 dark:border-white/10" />
+                                    <input
+                                        type="checkbox"
+                                        checked={allSelected}
+                                        ref={(el) => { if (el) el.indeterminate = someSelected; }}
+                                        onChange={toggleSelectAll}
+                                        aria-label={allSelected ? 'Desmarcar todas as empresas' : 'Selecionar todas as empresas'}
+                                        className="rounded border-slate-300 text-primary-600 focus:ring-primary-500 dark:bg-white/5 dark:border-white/10"
+                                    />
                                 </th>
                                 <th scope="col" className="px-6 py-4 font-bold text-slate-700 dark:text-slate-200 font-display text-xs uppercase tracking-wider">Empresa</th>
                                 <th scope="col" className="px-6 py-4 font-bold text-slate-700 dark:text-slate-200 font-display text-xs uppercase tracking-wider">Setor</th>
@@ -326,9 +340,15 @@ export const ContactsList: React.FC<ContactsListProps> = ({
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-white/5">
                             {filteredCompanies.map((company) => (
-                                <tr key={company.id} className="hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors group">
+                                <tr key={company.id} className={`hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors group ${selectedIds.has(company.id) ? 'bg-primary-50/50 dark:bg-primary-900/10' : ''}`}>
                                     <td className="px-6 py-4">
-                                        <input type="checkbox" aria-label={`Selecionar ${company.name}`} className="rounded border-slate-300 text-primary-600 focus:ring-primary-500 dark:bg-white/5 dark:border-white/10" />
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedIds.has(company.id)}
+                                            onChange={() => toggleSelect(company.id)}
+                                            aria-label={`Selecionar ${company.name}`}
+                                            className="rounded border-slate-300 text-primary-600 focus:ring-primary-500 dark:bg-white/5 dark:border-white/10"
+                                        />
                                     </td>
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-3">
@@ -372,12 +392,22 @@ export const ContactsList: React.FC<ContactsListProps> = ({
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 text-right">
-                                        <button
-                                            aria-label={`Mais opções para ${company.name}`}
-                                            className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-white opacity-0 group-hover:opacity-100 transition-all"
-                                        >
-                                            <MoreHorizontal size={16} aria-hidden="true" />
-                                        </button>
+                                        <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                                            <button
+                                                onClick={() => openEditCompanyModal?.(company)}
+                                                className="p-1.5 text-slate-400 hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded transition-colors"
+                                                aria-label={`Editar ${company.name}`}
+                                            >
+                                                <Pencil size={16} aria-hidden="true" />
+                                            </button>
+                                            <button
+                                                onClick={() => setDeleteCompanyId?.(company.id)}
+                                                className="p-1 hover:bg-red-50 dark:hover:bg-red-900/20 rounded text-slate-400 hover:text-red-500 transition-colors"
+                                                aria-label={`Excluir ${company.name}`}
+                                            >
+                                                <Trash2 size={16} aria-hidden="true" />
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
