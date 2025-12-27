@@ -1,11 +1,11 @@
-## Webhooks (Integrações) — Guia de uso
+## Webhooks (Integrações) — Guia (leigo-friendly)
 
-Este documento explica **como configurar** e **como usar** os webhooks “produto” do CRM:
+Este documento é para quem quer “ligar” automações sem precisar ser técnico.
 
-- **Entrada de Leads (Webhook)**: recebe um `POST` e cria contato + negócio no funil.
-- **Follow-up (Webhook de saída)**: quando um negócio muda de etapa, o CRM envia um `POST` para sua URL.
+- **Entrada de Leads**: você cola uma URL/“senha” no Hotmart/n8n/Make e os leads entram no seu funil automaticamente.
+- **Follow-up**: quando o lead muda de etapa, o CRM avisa seu sistema (n8n/Make/WhatsApp).
 
-> **Acesso**: as configurações são **admin-only** (RBAC + RLS).
+> **Acesso**: configurações de Webhooks são **admin-only**.
 
 ---
 
@@ -25,6 +25,43 @@ Na UI você consegue:
 
 ---
 
+## Guia rápido (sem técnico)
+
+### Entrada de Leads (Entrada automática no funil)
+
+1) Clique em **Ativar entrada de leads** e escolha:
+- **qual funil** (Board)
+- **qual etapa** (Estágio)
+
+2) Copie:
+- **URL do webhook**
+- **Secret** (a “senha”)
+
+3) No Hotmart/n8n/Make:
+- crie um passo “Enviar para URL (HTTP Request)”
+- cole a URL
+- cole o Secret no header `X-Webhook-Secret` (ou `Authorization: Bearer <secret>`)
+- envie o lead com pelo menos **e-mail ou telefone**
+
+### Follow-up (Aviso quando muda de etapa)
+
+1) Clique em **Conectar follow-up** e cole a URL do seu destino (n8n/Make/etc).
+
+2) Pronto: o CRM vai avisar sua URL quando o lead mudar de etapa.
+
+3) No seu destino, valide o header `X-Webhook-Secret` (ou `Authorization: Bearer ...`) — é a “senha” do aviso.
+
+### Se não funcionar (checklist)
+
+- URL correta?
+- Secret correto?
+- Você testou com um lead real?
+- No Follow-up: você **moveu o lead de etapa**? (só dispara quando muda)
+
+---
+
+## Detalhes técnicos (avançado)
+
 ## 1) Entrada de Leads (Webhook) — Inbound
 
 ### URL do endpoint
@@ -40,13 +77,14 @@ Quando você cria a “Entrada de Leads”, o CRM gera um `source_id` e a URL fi
 Você **precisa** enviar o header:
 
 - `X-Webhook-Secret: <secret>`
+  - (alternativa) `Authorization: Bearer <secret>`
 
 Esse secret é o “token” do webhook. Trate como senha.
 
 ### Headers recomendados
 
 - `Content-Type: application/json`
-- `X-Webhook-Secret: ...`
+- `X-Webhook-Secret: ...` (ou `Authorization: Bearer ...`)
 
 ### Payload (JSON)
 

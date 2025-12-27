@@ -9,7 +9,10 @@
  * - `POST /functions/v1/webhook-in/<source_id>`
  *
  * Autenticação:
- * - Header `X-Webhook-Secret` deve bater com o `secret` da fonte em `integration_inbound_sources`.
+ * - Aceita **um** destes formatos:
+ *   - Header `X-Webhook-Secret: <secret>`
+ *   - Header `Authorization: Bearer <secret>`
+ *   O valor deve bater com o `secret` da fonte em `integration_inbound_sources`.
  *
  * Observação:
  * - Este handler usa `SUPABASE_SERVICE_ROLE_KEY` (segredo padrão do Supabase) e ignora RLS.
@@ -48,13 +51,24 @@ function normalizePhone(phone?: string) {
   return cleaned || null;
 }
 
+function getSecretFromRequest(req: Request) {
+  const xSecret = req.headers.get("X-Webhook-Secret") || "";
+  if (xSecret.trim()) return xSecret.trim();
+
+  const auth = req.headers.get("Authorization") || "";
+  const m = auth.match(/^Bearer\s+(.+)$/i);
+  if (m && m[1]) return m[1].trim();
+
+  return "";
+}
+
 Deno.serve(async (req) => {
   if (req.method !== "POST") return json(405, { error: "Método não permitido" });
 
   const sourceId = getSourceIdFromPath(req);
   if (!sourceId) return json(404, { error: "source_id ausente na URL" });
 
-  const secretHeader = req.headers.get("X-Webhook-Secret") || "";
+  const secretHeader = getSecretFromRequest(req);
   if (!secretHeader) return json(401, { error: "Secret ausente" });
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");

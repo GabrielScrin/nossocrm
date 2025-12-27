@@ -24,6 +24,8 @@
     - Adicionado guia de uso em `docs/webhooks.md` (configuração, payloads, exemplos e troubleshooting).
   - **Integrações → Webhooks (UX)**:
     - Adicionado botão **“Como usar”** com guia rápido inline (passo-a-passo + exemplos de payload/cURL) diretamente na tela de Integrações.
+    - Ajustado o conteúdo do guia para ficar **leigo-friendly** e esconder detalhes técnicos em seção colapsável.
+    - Compatibilidade: webhook agora aceita/usa também **`Authorization: Bearer <secret>`** (mantendo `X-Webhook-Secret`) e o guia ganhou botão **Copiar** no exemplo de dados do lead.
 - **Debug Mode (UX)**:
   - Debug agora é **reativo** (sem refresh): toggle dispara evento (`DEBUG_MODE_EVENT`) e `DebugFillButton` usa `useDebugMode`.
   - Fix: geração de telefone fake agora é determinística (sem `fromRegExp`, evitando `\\` no número).

@@ -253,7 +253,8 @@ BEGIN
         url := endpoint.url,
         headers := jsonb_build_object(
           'Content-Type', 'application/json',
-          'X-Webhook-Secret', endpoint.secret
+          'X-Webhook-Secret', endpoint.secret,
+          'Authorization', ('Bearer ' || endpoint.secret)
         ),
         body := payload
       ) INTO req_id;
