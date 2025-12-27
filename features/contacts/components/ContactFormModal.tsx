@@ -163,23 +163,23 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
               />
             </div>
           </div>
-          {!editingContact && (
-            <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase mb-1">
-                Empresa
-              </label>
-              <input
-                type="text"
-                className="w-full bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-primary-500"
-                placeholder="Nome da Empresa"
-                value={formData.companyName}
-                onChange={e => setFormData({ ...formData, companyName: e.target.value })}
-              />
-              <p className="text-[10px] text-slate-400 mt-1">
-                Se a empresa já existir, o contato será vinculado a ela.
-              </p>
-            </div>
-          )}
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">
+              Empresa
+            </label>
+            <input
+              type="text"
+              className="w-full bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-primary-500"
+              placeholder="Nome da Empresa"
+              value={formData.companyName}
+              onChange={e => setFormData({ ...formData, companyName: e.target.value })}
+            />
+            <p className="text-[10px] text-slate-400 mt-1">
+              {editingContact
+                ? 'Edite para alterar a empresa. Deixe em branco para desvincular.'
+                : 'Se a empresa já existir, o contato será vinculado a ela.'}
+            </p>
+          </div>
 
           <button
             type="submit"

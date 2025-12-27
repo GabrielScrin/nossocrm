@@ -7,11 +7,22 @@
 - **Debug Mode (UX)**:
   - Debug agora é **reativo** (sem refresh): toggle dispara evento (`DEBUG_MODE_EVENT`) e `DebugFillButton` usa `useDebugMode`.
   - Fix: geração de telefone fake agora é determinística (sem `fromRegExp`, evitando `\\` no número).
+- **Contatos (UX)**:
+  - Campo **Empresa** agora aparece também no **Editar Contato**; limpar o campo **desvincula** a empresa do contato.
+  - Botão de debug **“Fake x10”** volta a funcionar com estado de loading (`disabled`).
 - **Atividades (contexto)**:
   - `Activity` suporta `contactId`, `clientCompanyId` e `participantContactIds`.
   - `activitiesService` agora persiste esses campos (com retry safe quando migration ainda não existe).
 - **Inbox (debug)**:
   - Botão **Seed Inbox** (apenas em debug) para criar dados que disparam sugestões de **Upsell**, **Stalled** e **Rescue**.
+ - **Contatos / Empresas (UX + fix)**:
+   - Modal **Editar Contato** agora exibe e pré-preenche o campo **Empresa** (e permite **desvincular** deixando em branco).
+   - Ícones clicáveis para abrir edição de contato:
+     - Na aba **Pessoas**, clicar no **avatar** abre o modal de edição.
+     - Na aba **Empresas**, clicar no **ícone da empresa** abre um contato vinculado (primeiro da lista).
+     - Na aba **Empresas**, clicar no avatar em **“Pessoas Vinc.”** abre o modal de edição daquele contato.
+ - **Inbox (UX)**:
+   - Empty-state **“Inbox Zero”** agora aparece também na view **Lista** (igual ao modo Foco), reutilizando `InboxZeroState`.
 
 ## 26/12/2025
 

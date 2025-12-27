@@ -354,25 +354,29 @@ export const useContactsController = () => {
 
     // Find or create company
     let companyId: string | undefined;
-    const existingCompany = companies.find(
-      c => (c.name || '').toLowerCase() === (formData.companyName || '').toLowerCase()
-    );
+    const companyName = (formData.companyName || '').trim();
+    const companyNameKey = companyName.toLowerCase();
 
-    if (existingCompany) {
-      companyId = existingCompany.id;
-    } else if (formData.companyName) {
-      // Create new company and wait for result
-      const newCompany = await new Promise<{ id: string } | null>(resolve => {
-        createCompanyMutation.mutate(
-          { name: formData.companyName },
-          { onSuccess: resolve, onError: () => resolve(null) }
-        );
-      });
-      if (newCompany) {
-        companyId = newCompany.id;
+    if (companyName) {
+      const existingCompany = companies.find(c => (c.name || '').toLowerCase() === companyNameKey);
+
+      if (existingCompany) {
+        companyId = existingCompany.id;
+      } else {
+        // Create new company and wait for result
+        const newCompany = await new Promise<{ id: string } | null>(resolve => {
+          createCompanyMutation.mutate(
+            { name: companyName },
+            { onSuccess: resolve, onError: () => resolve(null) }
+          );
+        });
+        if (newCompany) {
+          companyId = newCompany.id;
+        }
       }
     } else if (editingContact) {
-      companyId = editingContact.companyId;
+      // Explicitly unlink company when clearing the field in Edit
+      companyId = '';
     }
 
     if (editingContact) {

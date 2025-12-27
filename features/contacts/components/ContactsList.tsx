@@ -223,9 +223,15 @@ export const ContactsList: React.FC<ContactsListProps> = ({
                                     </td>
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary-100 to-primary-200 dark:from-primary-900 dark:to-primary-800 text-primary-700 dark:text-primary-200 flex items-center justify-center font-bold text-sm shadow-sm ring-2 ring-white dark:ring-white/5">
+                                            <button
+                                                type="button"
+                                                onClick={() => openEditModal(contact)}
+                                                className="w-9 h-9 rounded-full bg-gradient-to-br from-primary-100 to-primary-200 dark:from-primary-900 dark:to-primary-800 text-primary-700 dark:text-primary-200 flex items-center justify-center font-bold text-sm shadow-sm ring-2 ring-white dark:ring-white/5 hover:opacity-90 transition-opacity focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-dark-card"
+                                                aria-label={`Editar contato: ${contact.name || 'Sem nome'}`}
+                                                title={contact.name || 'Sem nome'}
+                                            >
                                                 {(contact.name || '?').charAt(0)}
-                                            </div>
+                                            </button>
                                             <div>
                                                 <span className="font-semibold text-slate-900 dark:text-white block">{contact.name}</span>
                                             </div>
@@ -352,9 +358,35 @@ export const ContactsList: React.FC<ContactsListProps> = ({
                                     </td>
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-9 h-9 rounded-lg bg-slate-100 dark:bg-white/10 flex items-center justify-center text-slate-500 dark:text-slate-400 shadow-sm">
-                                                <Building2 size={18} />
-                                            </div>
+                                            {(() => {
+                                                const firstLinkedContact = (contactsByCompanyId.get(company.id) ?? [])[0];
+                                                return (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            if (firstLinkedContact) openEditModal(firstLinkedContact);
+                                                        }}
+                                                        disabled={!firstLinkedContact}
+                                                        className={`w-9 h-9 rounded-lg bg-slate-100 dark:bg-white/10 flex items-center justify-center text-slate-500 dark:text-slate-400 shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-dark-card ${
+                                                            firstLinkedContact
+                                                                ? 'hover:bg-slate-200 dark:hover:bg-white/15'
+                                                                : 'opacity-50 cursor-not-allowed'
+                                                        }`}
+                                                        aria-label={
+                                                            firstLinkedContact
+                                                                ? `Abrir contato vinculado de ${company.name}`
+                                                                : `Sem contatos vinculados para ${company.name}`
+                                                        }
+                                                        title={
+                                                            firstLinkedContact
+                                                                ? `Abrir: ${firstLinkedContact.name || 'Contato'}`
+                                                                : 'Sem contatos vinculados'
+                                                        }
+                                                    >
+                                                        <Building2 size={18} />
+                                                    </button>
+                                                );
+                                            })()}
                                             <div>
                                                 <span className="font-semibold text-slate-900 dark:text-white block">{company.name}</span>
                                                 {company.website && (
@@ -382,9 +414,16 @@ export const ContactsList: React.FC<ContactsListProps> = ({
                                         */}
                                         <div className="flex -space-x-2 overflow-hidden">
                                             {(contactsByCompanyId.get(company.id) ?? []).map(c => (
-                                                <div key={c.id} className="h-6 w-6 rounded-full ring-2 ring-white dark:ring-dark-card bg-primary-100 dark:bg-primary-900 flex items-center justify-center text-[10px] font-bold text-primary-700 dark:text-primary-300" title={c.name || 'Sem nome'}>
+                                                <button
+                                                    key={c.id}
+                                                    type="button"
+                                                    onClick={() => openEditModal(c)}
+                                                    className="h-6 w-6 rounded-full ring-2 ring-white dark:ring-dark-card bg-primary-100 dark:bg-primary-900 flex items-center justify-center text-[10px] font-bold text-primary-700 dark:text-primary-300 hover:bg-primary-200 dark:hover:bg-primary-800 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-dark-card"
+                                                    title={c.name || 'Sem nome'}
+                                                    aria-label={`Editar contato: ${c.name || 'Sem nome'}`}
+                                                >
                                                     {(c.name || '?').charAt(0)}
-                                                </div>
+                                                </button>
                                             ))}
                                             {(contactsByCompanyId.get(company.id) ?? []).length === 0 && (
                                                 <span className="text-slate-400 text-xs italic">Ninguém</span>
