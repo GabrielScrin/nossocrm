@@ -18,14 +18,14 @@ Este MCP Server reutiliza o mesmo esquema de autenticação da **Public API**:
 
 > A API key é validada via RPC `validate_api_key` no Supabase, e o acesso é limitado ao `organization_id` retornado.
 
-## Tools disponíveis (MVP)
+## Tools disponíveis
 
-- `crm_get_me`
-  - Retorna o contexto da organização da API key.
-- `crm_search_deals`
-  - Busca deals por título (`q`) na organização autenticada.
-- `crm_get_deal`
-  - Busca um deal por `dealId` (UUID) na organização autenticada.
+As tools expostas em `tools/list` são geradas a partir das tools existentes do CRM (definidas em `createCRMTools`), com nomes padronizados no formato `crm.*` (ex.: `crm.deals.search`, `crm.deals.move`, `crm.activities.list`).
+
+Notas:
+- Os nomes antigos do MVP (`crm_get_me`, `crm_search_deals`, `crm_get_deal`) **não** são mais publicados.
+- Os schemas de entrada (`inputSchema`) são publicados em **JSON Schema 2020-12**.
+- Erros de validação/negócio retornam `isError: true` no ToolResult (em vez de erro JSON-RPC), para permitir auto-correção pelo client/modelo.
 
 ## Testar com MCP Inspector
 
@@ -36,7 +36,7 @@ Este MCP Server reutiliza o mesmo esquema de autenticação da **Public API**:
    - **Bearer Token**: sua API key
 3. Conecte e execute:
    - `tools/list`
-   - `tools/call` com `crm_get_me`
+   - `tools/call` com alguma tool `crm.*` (ex.: `crm.deals.search`)
 
 ## Exemplo (curl)
 
@@ -47,3 +47,19 @@ curl -sS -X POST 'https://<seu-dominio>/api/mcp' \
   --data-raw '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
 ```
 
+### Exemplo (curl) – tools/call
+
+```bash
+curl -sS -X POST 'https://<seu-dominio>/api/mcp' \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer <API_KEY>' \
+  --data-raw '{
+    "jsonrpc": "2.0",
+    "id": 2,
+    "method": "tools/call",
+    "params": {
+      "name": "crm.deals.search",
+      "arguments": { "query": "Nike", "limit": 5 }
+    }
+  }'
+```
