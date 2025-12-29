@@ -559,8 +559,27 @@ export default function InstallWizardPage() {
         try {
           const errorData = JSON.parse(err.message);
           if (errorData.code === 'PROJECT_EXISTS' && errorData.existingProject) {
-            setConflictingProject(errorData.existingProject);
+            const existingProj = errorData.existingProject;
+            setConflictingProject(existingProj);
             setSupabaseUiStep('needspace'); // Will show conflict modal
+            
+            // Se o projeto está PAUSING, inicia polling imediatamente
+            if (existingProj.status?.toUpperCase().includes('PAUSING')) {
+              console.log('[CONFLICT] Projeto está PAUSING, iniciando polling...');
+              setPausePolling(true);
+              pollProjectStatus(existingProj.ref)
+                .then(finalStatus => {
+                  console.log('[CONFLICT] Polling completo, status:', finalStatus);
+                  setConflictingProject(prev => prev ? { ...prev, status: finalStatus } : null);
+                })
+                .catch(pollErr => {
+                  console.error('[CONFLICT] Erro no polling:', pollErr);
+                  setSupabaseCreateError(pollErr instanceof Error ? pollErr.message : 'Timeout');
+                })
+                .finally(() => {
+                  setPausePolling(false);
+                });
+            }
             return;
           }
         } catch {}
