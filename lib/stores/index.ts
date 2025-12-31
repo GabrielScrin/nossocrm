@@ -19,7 +19,7 @@
  * 
  * @example
  * ```tsx
- * import { useSidebarOpen, useUIStore } from '@/stores';
+ * import { useSidebarOpen, useUIStore } from '@/lib/stores';
  * 
  * // Seletor fino - só re-renderiza quando sidebar muda
  * const sidebarOpen = useSidebarOpen();
