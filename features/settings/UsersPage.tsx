@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import ConfirmModal from '@/components/ConfirmModal';
-import { Loader2, UserPlus, Crown, Briefcase, KeyRound, Mail, Check, X, Sparkles, Clock, RefreshCw, Trash2, Link, Copy, CheckCircle2 } from 'lucide-react';
+import { Loader2, UserPlus, Crown, Briefcase, KeyRound, Mail, Check, X, Sparkles, Clock, RefreshCw, Trash2, Link, Copy, CheckCircle2, type LucideIcon } from 'lucide-react';
 import type { UserRole } from '@/types';
 
 interface Profile {
@@ -29,7 +29,7 @@ type RoleMeta = {
     description: string;
     badgeClass: string;
     chipClass: string;
-    icon: (props: { className?: string }) => JSX.Element;
+    icon: LucideIcon;
     activeClass: string;
     dotClass: string;
 };
@@ -40,7 +40,7 @@ const ROLE_META: Record<UserRole, RoleMeta> = {
         description: 'Acesso total, configurações e gestão de usuários.',
         badgeClass: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
         chipClass: 'text-amber-600 dark:text-amber-400',
-        icon: (props) => <Crown {...props} />,
+        icon: Crown,
         activeClass: 'border-amber-500 bg-amber-50 dark:bg-amber-900/20',
         dotClass: 'bg-amber-500',
     },
@@ -49,7 +49,7 @@ const ROLE_META: Record<UserRole, RoleMeta> = {
         description: 'Acesso a todos os projetos e dados de mídia.',
         badgeClass: 'bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300',
         chipClass: 'text-sky-600 dark:text-sky-300',
-        icon: (props) => <Sparkles {...props} />,
+        icon: Sparkles,
         activeClass: 'border-sky-500 bg-sky-50 dark:bg-sky-900/20',
         dotClass: 'bg-sky-500',
     },
@@ -58,7 +58,7 @@ const ROLE_META: Record<UserRole, RoleMeta> = {
         description: 'Apenas projetos atribuídos; foco em pipeline e leads.',
         badgeClass: 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300',
         chipClass: 'text-primary-600 dark:text-primary-300',
-        icon: (props) => <Briefcase {...props} />,
+        icon: Briefcase,
         activeClass: 'border-primary-500 bg-primary-50 dark:bg-primary-900/20',
         dotClass: 'bg-primary-500',
     },
@@ -67,7 +67,7 @@ const ROLE_META: Record<UserRole, RoleMeta> = {
         description: 'Acesso limitado ao(s) próprio(s) projeto(s) e resultados.',
         badgeClass: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
         chipClass: 'text-emerald-600 dark:text-emerald-300',
-        icon: (props) => <Mail {...props} />,
+        icon: Mail,
         activeClass: 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20',
         dotClass: 'bg-emerald-500',
     },
@@ -398,8 +398,8 @@ export const UsersPage: React.FC = () => {
                                         )}
                                     </div>
                                     <div className="flex items-center gap-3 mt-1.5">
-                                        <span className={`inline-flex items-center gap-1.5 text-sm ${roleMeta.chipClass || 'text-slate-500 dark:text-slate-400'}`}>
-                                            {roleMeta.icon({ className: 'h-3.5 w-3.5' })}
+                    <span className={`inline-flex items-center gap-1.5 text-sm ${roleMeta.chipClass || 'text-slate-500 dark:text-slate-400'}`}>
+                                            <roleMeta.icon className="h-3.5 w-3.5" />
                                             {roleMeta.label}
                                         </span>
                                         <span className="text-slate-300 dark:text-slate-600">•</span>
@@ -568,7 +568,7 @@ export const UsersPage: React.FC = () => {
                                                         }`}
                                                 >
                                                     <div className="flex items-center gap-2 mb-1">
-                                                        {meta.icon({ className: `h-4 w-4 ${active ? meta.chipClass : 'text-slate-400'}` })}
+                                                        <meta.icon className={`h-4 w-4 ${active ? meta.chipClass : 'text-slate-400'}`} />
                                                         <span className={`font-medium text-sm ${active ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300'}`}>
                                                             {meta.label}
                                                         </span>
