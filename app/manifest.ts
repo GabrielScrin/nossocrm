@@ -2,9 +2,9 @@ import type { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'NossoCRM',
-    short_name: 'NossoCRM',
-    description: 'CRM Inteligente para Gestão de Vendas',
+    name: 'CR8',
+    short_name: 'CR8',
+    description: 'CRM inteligente para gestao de vendas',
     start_url: '/boards',
     display: 'standalone',
     background_color: '#ffffff',
@@ -13,12 +13,12 @@ export default function manifest(): MetadataRoute.Manifest {
       // SVG icons keep the repo text-only. If you need iOS splash/touch icons later,
       // add PNGs in a follow-up.
       {
-        src: '/icons/icon.svg',
+        src: '/icon.svg',
         sizes: 'any',
         type: 'image/svg+xml',
       },
       {
-        src: '/icons/maskable.svg',
+        src: '/icon.svg',
         sizes: 'any',
         type: 'image/svg+xml',
         purpose: 'maskable',

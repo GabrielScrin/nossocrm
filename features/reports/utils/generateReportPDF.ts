@@ -64,7 +64,7 @@ export const generateReportPDF = (data: ReportData, period: PeriodFilter, boardN
     // HEADER
     // ============================================
 
-    // Logo placeholder (N for NossoCRM)
+    // Logo placeholder (C for CR8)
     doc.setFillColor(...COLORS.blue);
     doc.roundedRect(margin, 12, 12, 12, 2, 2, 'F');
     doc.setFontSize(10);
@@ -310,7 +310,7 @@ export const generateReportPDF = (data: ReportData, period: PeriodFilter, boardN
     // Footer text
     doc.setFontSize(7);
     doc.setTextColor(...COLORS.secondary);
-    doc.text('NossoCRM', margin, pageHeight - 10);
+    doc.text('CR8', margin, pageHeight - 10);
     doc.text('Página 1', pageWidth / 2, pageHeight - 10, { align: 'center' });
     doc.text(new Date().toLocaleDateString('pt-BR'), pageWidth - margin, pageHeight - 10, { align: 'right' });
 
