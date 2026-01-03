@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { UserRole } from './roles';
 
 // Define Zod schemas for runtime validation
 export const StageSchema = z.object({
@@ -99,8 +100,10 @@ export const CRMCallOptionsSchema = z.object({
     // User context
     userId: z.string().optional(),
     userName: z.string().optional(),
-    userRole: z.enum(['admin', 'vendedor']).optional(),
+    userRole: z.enum(['admin', 'gestor', 'vendedor', 'cliente']).optional(),
 });
 
 // Infer type from schema for type-safety
-export type CRMCallOptions = z.infer<typeof CRMCallOptionsSchema>;
+export type CRMCallOptions = z.infer<typeof CRMCallOptionsSchema> & {
+    userRole?: UserRole;
+};

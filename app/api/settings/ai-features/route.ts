@@ -40,7 +40,7 @@ export async function GET() {
   for (const row of data || []) flags[row.key] = Boolean(row.enabled);
 
   return json({
-    isAdmin: me.role === 'admin',
+    isAdmin: me.role === 'admin' || me.role === 'gestor',
     flags,
   });
 }
@@ -75,7 +75,7 @@ export async function POST(req: Request) {
     .single();
 
   if (meError || !me?.organization_id) return json({ error: 'Profile not found' }, 404);
-  if (me.role !== 'admin') return json({ error: 'Forbidden' }, 403);
+  if (me.role !== 'admin' && me.role !== 'gestor') return json({ error: 'Forbidden' }, 403);
 
   const rawBody = await req.json().catch(() => null);
   const parsed = UpdateFeatureSchema.safeParse(rawBody);

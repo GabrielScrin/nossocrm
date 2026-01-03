@@ -13,7 +13,7 @@ import { AIFeaturesSection } from './components/AIFeaturesSection';
 export const AICenterSettings: React.FC = () => {
   const { profile } = useAuth();
   const { aiOrgEnabled, setAiOrgEnabled } = useCRM();
-  const isAdmin = profile?.role === 'admin';
+  const isAdmin = profile?.role === 'admin' || profile?.role === 'gestor';
 
   return (
     <div className="pb-10">
@@ -26,7 +26,7 @@ export const AICenterSettings: React.FC = () => {
         </p>
       </div>
 
-      {/* Org-wide toggle (admin-only) — sempre visível no topo */}
+      {/* Org-wide toggle (admin/gestor) — sempre visível no topo */}
       <div className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-6 mb-6">
         <div className="flex items-center justify-between gap-4">
           <div>
@@ -38,7 +38,7 @@ export const AICenterSettings: React.FC = () => {
             </p>
             {!isAdmin && (
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
-                Apenas administradores podem alterar essa configuração.
+                Apenas administradores ou gestores podem alterar essa configuração.
               </p>
             )}
           </div>

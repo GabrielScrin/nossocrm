@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { isAllowedOrigin } from '@/lib/security/sameOrigin';
+import type { UserRole } from '@/types';
 
 function json<T>(body: T, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -9,11 +10,11 @@ function json<T>(body: T, status = 200): Response {
   });
 }
 
-type Role = 'admin' | 'vendedor';
+type Role = UserRole;
 
 const CreateInviteSchema = z
   .object({
-    role: z.enum(['admin', 'vendedor']).default('vendedor'),
+    role: z.enum(['admin', 'gestor', 'vendedor', 'cliente']).default('vendedor'),
     expiresAt: z.union([z.string().datetime(), z.null()]).optional(),
     email: z.string().email().optional(),
   })

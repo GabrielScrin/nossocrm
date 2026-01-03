@@ -1,14 +1,15 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import ConfirmModal from '@/components/ConfirmModal';
 import { Loader2, UserPlus, Crown, Briefcase, KeyRound, Mail, Check, X, Sparkles, Clock, RefreshCw, Trash2, Link, Copy, CheckCircle2 } from 'lucide-react';
+import type { UserRole } from '@/types';
 
 interface Profile {
     id: string;
     email: string;
-    role: string;
+    role: UserRole;
     organization_id: string;
     created_at: string;
     status: 'active' | 'pending';
@@ -22,6 +23,55 @@ interface InviteResult {
     success: boolean;
     error?: string;
 }
+
+type RoleMeta = {
+    label: string;
+    description: string;
+    badgeClass: string;
+    chipClass: string;
+    icon: (props: { className?: string }) => JSX.Element;
+    activeClass: string;
+    dotClass: string;
+};
+
+const ROLE_META: Record<UserRole, RoleMeta> = {
+    admin: {
+        label: 'Admin',
+        description: 'Acesso total, configurações e gestão de usuários.',
+        badgeClass: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
+        chipClass: 'text-amber-600 dark:text-amber-400',
+        icon: (props) => <Crown {...props} />,
+        activeClass: 'border-amber-500 bg-amber-50 dark:bg-amber-900/20',
+        dotClass: 'bg-amber-500',
+    },
+    gestor: {
+        label: 'Gestor de Tráfego',
+        description: 'Acesso a todos os projetos e dados de mídia.',
+        badgeClass: 'bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300',
+        chipClass: 'text-sky-600 dark:text-sky-300',
+        icon: (props) => <Sparkles {...props} />,
+        activeClass: 'border-sky-500 bg-sky-50 dark:bg-sky-900/20',
+        dotClass: 'bg-sky-500',
+    },
+    vendedor: {
+        label: 'Vendedor',
+        description: 'Apenas projetos atribuídos; foco em pipeline e leads.',
+        badgeClass: 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300',
+        chipClass: 'text-primary-600 dark:text-primary-300',
+        icon: (props) => <Briefcase {...props} />,
+        activeClass: 'border-primary-500 bg-primary-50 dark:bg-primary-900/20',
+        dotClass: 'bg-primary-500',
+    },
+    cliente: {
+        label: 'Cliente',
+        description: 'Acesso limitado ao(s) próprio(s) projeto(s) e resultados.',
+        badgeClass: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
+        chipClass: 'text-emerald-600 dark:text-emerald-300',
+        icon: (props) => <Mail {...props} />,
+        activeClass: 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20',
+        dotClass: 'bg-emerald-500',
+    },
+};
 
 // Gera iniciais e cor consistente baseada no email
 const getAvatarProps = (email: string) => {
@@ -51,12 +101,12 @@ export const UsersPage: React.FC = () => {
     const [users, setUsers] = useState<Profile[]>([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [newUserRole, setNewUserRole] = useState('vendedor');
+    const [newUserRole, setNewUserRole] = useState<UserRole>('vendedor');
     const [sendingInvites, setSendingInvites] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [actionLoading, setActionLoading] = useState<string | null>(null); // id do usuário em ação
     const [userToDelete, setUserToDelete] = useState<Profile | null>(null);
-    const [activeInvites, setActiveInvites] = useState<any[]>([]);
+    const [activeInvites, setActiveInvites] = useState<Array<{ id: string; token: string; role: UserRole; expires_at: string | null; used_at?: string | null }>>([]);
     const [expirationDays, setExpirationDays] = useState<number | null>(7); // 7 days default, null = never
 
     const sb = supabase;
@@ -96,9 +146,9 @@ export const UsersPage: React.FC = () => {
                 throw new Error(data?.error || `Falha ao carregar convites (HTTP ${res.status})`);
             }
 
-            const invites = data?.invites || [];
+            const invites = (data?.invites || []) as Array<{ id: string; token: string; role: UserRole; expires_at: string | null; used_at?: string | null }>;
             const nowTs = Date.now();
-            const validInvites = (invites || []).filter((invite: any) => {
+            const validInvites = (invites || []).filter((invite) => {
                 // Only show invites that are not used
                 if (invite.used_at) return false;
                 // If no expiration, it's valid
@@ -270,8 +320,15 @@ export const UsersPage: React.FC = () => {
         );
     }
 
-    const admins = users.filter(u => u.role === 'admin');
-    const vendedores = users.filter(u => u.role === 'vendedor');
+    const roleCounts = users.reduce<Record<UserRole, number>>((acc, user) => {
+        acc[user.role] = (acc[user.role] || 0) + 1;
+        return acc;
+    }, { admin: 0, gestor: 0, vendedor: 0, cliente: 0 });
+
+    const admins = roleCounts.admin;
+    const gestores = roleCounts.gestor;
+    const vendedores = roleCounts.vendedor;
+    const clientes = roleCounts.cliente;
 
     return (
         <div className="max-w-4xl mx-auto pb-10">
@@ -283,7 +340,7 @@ export const UsersPage: React.FC = () => {
                             Sua Equipe
                         </h1>
                         <p className="text-slate-500 dark:text-slate-400 mt-2 text-lg">
-                            {users.length} {users.length === 1 ? 'membro' : 'membros'} • {admins.length} admin{admins.length !== 1 && 's'}, {vendedores.length} vendedor{vendedores.length !== 1 && 'es'}
+                            {users.length} {users.length === 1 ? 'membro' : 'membros'} • {admins} admin{admins !== 1 && 's'}, {gestores} gestor{gestores !== 1 && 'es'}, {vendedores} vendedor{vendedores !== 1 && 'es'}, {clientes} cliente{clientes !== 1 && 's'}
                         </p>
                     </div>
                     <button
@@ -301,6 +358,7 @@ export const UsersPage: React.FC = () => {
                 {users.map((user) => {
                     const { initials, gradient } = getAvatarProps(user.email);
                     const isCurrentUser = user.id === currentUserProfile?.id;
+                    const roleMeta = ROLE_META[user.role] || ROLE_META.vendedor;
 
                     return (
                         <div
@@ -340,21 +398,9 @@ export const UsersPage: React.FC = () => {
                                         )}
                                     </div>
                                     <div className="flex items-center gap-3 mt-1.5">
-                                        <span className={`inline-flex items-center gap-1.5 text-sm ${user.role === 'admin'
-                                            ? 'text-amber-600 dark:text-amber-400'
-                                            : 'text-slate-500 dark:text-slate-400'
-                                            }`}>
-                                            {user.role === 'admin' ? (
-                                                <>
-                                                    <Crown className="h-3.5 w-3.5" />
-                                                    Administrador
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <Briefcase className="h-3.5 w-3.5" />
-                                                    Vendedor
-                                                </>
-                                            )}
+                                        <span className={`inline-flex items-center gap-1.5 text-sm ${roleMeta.chipClass || 'text-slate-500 dark:text-slate-400'}`}>
+                                            {roleMeta.icon({ className: 'h-3.5 w-3.5' })}
+                                            {roleMeta.label}
                                         </span>
                                         <span className="text-slate-300 dark:text-slate-600">•</span>
                                         <span className="text-sm text-slate-400 dark:text-slate-500">
@@ -452,45 +498,45 @@ export const UsersPage: React.FC = () => {
 
                                 {activeInvites.length > 0 ? (
                                     <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-                                        {activeInvites.map((invite) => (
-                                            <div key={invite.id} className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-3">
-                                                <div className="min-w-0 flex-1">
-                                                    <div className="flex items-center gap-2 mb-1">
-                                                        <span className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${invite.role === 'admin'
-                                                            ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
-                                                            : 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300'
-                                                            }`}>
-                                                            {invite.role}
-                                                        </span>
-                                                        <span className="text-xs text-slate-400">
-                                                            {invite.expires_at
-                                                                ? `Expira em ${new Date(invite.expires_at).toLocaleDateString()}`
-                                                                : 'Nunca expira'
-                                                            }
-                                                        </span>
+                                        {activeInvites.map((invite) => {
+                                            const inviteMeta = ROLE_META[invite.role] || ROLE_META.vendedor;
+                                            return (
+                                                <div key={invite.id} className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-3">
+                                                    <div className="min-w-0 flex-1">
+                                                        <div className="flex items-center gap-2 mb-1">
+                                                            <span className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${inviteMeta.badgeClass}`}>
+                                                                {inviteMeta.label}
+                                                            </span>
+                                                            <span className="text-xs text-slate-400">
+                                                                {invite.expires_at
+                                                                    ? `Expira em ${new Date(invite.expires_at).toLocaleDateString()}`
+                                                                    : 'Nunca expira'
+                                                                }
+                                                            </span>
+                                                        </div>
+                                                        <code className="block text-xs text-slate-600 dark:text-slate-300 truncate">
+                                                            ...{invite.token.slice(-8)}
+                                                        </code>
                                                     </div>
-                                                    <code className="block text-xs text-slate-600 dark:text-slate-300 truncate">
-                                                        ...{invite.token.slice(-8)}
-                                                    </code>
+                                                    <div className="flex items-center gap-1">
+                                                        <button
+                                                            onClick={() => copyLink(invite.token)}
+                                                            className="p-2 text-primary-600 hover:bg-primary-100 dark:hover:bg-primary-900/30 rounded-lg transition-colors"
+                                                            title="Copiar link"
+                                                        >
+                                                            <Copy className="h-4 w-4" />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDeleteInvite(invite.id)}
+                                                            className="p-2 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                                                            title="Revogar link"
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </button>
+                                                    </div>
                                                 </div>
-                                                <div className="flex items-center gap-1">
-                                                    <button
-                                                        onClick={() => copyLink(invite.token)}
-                                                        className="p-2 text-primary-600 hover:bg-primary-100 dark:hover:bg-primary-900/30 rounded-lg transition-colors"
-                                                        title="Copiar link"
-                                                    >
-                                                        <Copy className="h-4 w-4" />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDeleteInvite(invite.id)}
-                                                        className="p-2 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors"
-                                                        title="Revogar link"
-                                                    >
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        ))}
+                                            );
+                                        })}
                                     </div>
                                 ) : (
                                     <div className="text-center p-6 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl">
@@ -508,42 +554,34 @@ export const UsersPage: React.FC = () => {
                                         Cargo
                                     </label>
                                     <div className="grid grid-cols-2 gap-3">
-                                        <button
-                                            type="button"
-                                            onClick={() => setNewUserRole('vendedor')}
-                                            className={`relative p-3 rounded-xl border-2 text-left transition-all ${newUserRole === 'vendedor'
-                                                ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-                                                : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
-                                                }`}
-                                        >
-                                            <div className="flex items-center gap-2 mb-1">
-                                                <Briefcase className={`h-4 w-4 ${newUserRole === 'vendedor' ? 'text-primary-600 dark:text-primary-400' : 'text-slate-400'}`} />
-                                                <span className={`font-medium text-sm ${newUserRole === 'vendedor' ? 'text-primary-900 dark:text-primary-100' : 'text-slate-700 dark:text-slate-300'}`}>
-                                                    Vendedor
-                                                </span>
-                                            </div>
-                                            {newUserRole === 'vendedor' && (
-                                                <div className="absolute top-2 right-2 h-2 w-2 rounded-full bg-primary-500" />
-                                            )}
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => setNewUserRole('admin')}
-                                            className={`relative p-3 rounded-xl border-2 text-left transition-all ${newUserRole === 'admin'
-                                                ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/20'
-                                                : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
-                                                }`}
-                                        >
-                                            <div className="flex items-center gap-2 mb-1">
-                                                <Crown className={`h-4 w-4 ${newUserRole === 'admin' ? 'text-amber-600 dark:text-amber-400' : 'text-slate-400'}`} />
-                                                <span className={`font-medium text-sm ${newUserRole === 'admin' ? 'text-amber-900 dark:text-amber-100' : 'text-slate-700 dark:text-slate-300'}`}>
-                                                    Admin
-                                                </span>
-                                            </div>
-                                            {newUserRole === 'admin' && (
-                                                <div className="absolute top-2 right-2 h-2 w-2 rounded-full bg-amber-500" />
-                                            )}
-                                        </button>
+                                        {(['vendedor', 'gestor', 'cliente', 'admin'] as UserRole[]).map((role) => {
+                                            const meta = ROLE_META[role];
+                                            const active = newUserRole === role;
+                                            return (
+                                                <button
+                                                    key={role}
+                                                    type="button"
+                                                    onClick={() => setNewUserRole(role)}
+                                                    className={`relative p-3 rounded-xl border-2 text-left transition-all ${active
+                                                        ? meta.activeClass
+                                                        : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
+                                                        }`}
+                                                >
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        {meta.icon({ className: `h-4 w-4 ${active ? meta.chipClass : 'text-slate-400'}` })}
+                                                        <span className={`font-medium text-sm ${active ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300'}`}>
+                                                            {meta.label}
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-xs text-slate-500 dark:text-slate-400 leading-snug">
+                                                        {meta.description}
+                                                    </p>
+                                                    {active && (
+                                                        <div className={`absolute top-2 right-2 h-2 w-2 rounded-full ${meta.dotClass}`} />
+                                                    )}
+                                                </button>
+                                            );
+                                        })}
                                     </div>
                                 </div>
 

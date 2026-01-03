@@ -103,6 +103,28 @@ describe('SettingsPage RBAC', () => {
     expect(screen.getByRole('button', { name: /central de i\.a/i })).toBeInTheDocument()
   })
 
+  it('gestor vê seções de configuração do sistema', async () => {
+    useAuthMock.mockReturnValue({
+      profile: { role: 'gestor' },
+    } as any)
+
+    render(<SettingsPage />)
+
+    expect(screen.getByRole('heading', { name: /^Gerenciamento de Tags$/i })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /^Campos Personalizados$/i })).toBeInTheDocument()
+
+    const integrationsTab = screen.getByRole('button', { name: /integrações/i })
+    expect(integrationsTab).toBeInTheDocument()
+    fireEvent.click(integrationsTab)
+
+    const apiSubTab = await screen.findByRole('button', { name: /^API$/i })
+    const webhooksSubTab = await screen.findByRole('button', { name: /^Webhooks$/i })
+    const mcpSubTab = await screen.findByRole('button', { name: /^MCP$/i })
+    expect(apiSubTab).toBeInTheDocument()
+    expect(webhooksSubTab).toBeInTheDocument()
+    expect(mcpSubTab).toBeInTheDocument()
+  })
+
   it('admin vê seções de configuração do sistema', async () => {
     useAuthMock.mockReturnValue({
       profile: { role: 'admin' },
