@@ -43,6 +43,12 @@ export const queryKeys = {
         funnel: ['dashboard', 'funnel'] as const,
         timeline: ['dashboard', 'timeline'] as const,
     },
+
+    // Analytics (Ads/Funnel)
+    analytics: {
+        summary: (params?: { projectId?: string; from?: string; to?: string }) => ['analytics', 'summary', params] as const,
+        funnel: (params?: { projectId?: string; from?: string; to?: string }) => ['analytics', 'funnel', params] as const,
+    },
 };
 
 /**
