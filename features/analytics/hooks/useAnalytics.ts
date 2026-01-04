@@ -56,8 +56,12 @@ async function fetchSummary(params: SummaryParams): Promise<AnalyticsSummary> {
 }
 
 export function useAnalyticsSummary(params: SummaryParams) {
+    const normalized = {
+        ...params,
+        projectId: params.projectId ?? undefined,
+    };
     return useQuery({
-        queryKey: queryKeys.analytics.summary(params),
+        queryKey: queryKeys.analytics.summary(normalized),
         queryFn: () => fetchSummary(params),
         staleTime: 60_000,
     });
