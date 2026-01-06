@@ -1,16 +1,108 @@
-import React, { useMemo, useState } from 'react';
+﻿import React, { useMemo, useState } from 'react';
 import { StatCard } from '@/features/dashboard/components/StatCard';
 import { useAnalyticsSummary } from './hooks/useAnalytics';
+import { useConversions } from './hooks/useConversions';
+import { ConversionsTable } from './components/ConversionsTable';
 import { DollarSign, MousePointer2, TrendingUp, CheckCircle2, LineChart, Activity } from 'lucide-react';
 
-type Period = '7d' | '30d' | '90d';
+type Period =
+    | 'all'
+    | 'today'
+    | 'yesterday'
+    | '7d'
+    | '30d'
+    | 'this_month'
+    | 'last_month'
+    | 'this_quarter'
+    | 'last_quarter'
+    | 'this_year'
+    | 'last_year';
 
 function getDateRange(period: Period) {
     const end = new Date();
     const start = new Date(end);
-    if (period === '7d') start.setDate(end.getDate() - 6);
-    if (period === '30d') start.setDate(end.getDate() - 29);
-    if (period === '90d') start.setDate(end.getDate() - 89);
+    const setToMonth = (date: Date, offset = 0) => {
+        const d = new Date(date);
+        d.setMonth(d.getMonth() + offset, 1);
+        d.setHours(0, 0, 0, 0);
+        return d;
+    };
+    const setToYear = (date: Date, offset = 0) => {
+        const d = new Date(date);
+        d.setFullYear(d.getFullYear() + offset, 0, 1);
+        d.setHours(0, 0, 0, 0);
+        return d;
+    };
+    const setToQuarterStart = (date: Date, offset = 0) => {
+        const d = new Date(date);
+        const currentQuarter = Math.floor(d.getMonth() / 3);
+        const targetQuarter = currentQuarter + offset;
+        const targetMonth = targetQuarter * 3;
+        d.setMonth(targetMonth, 1);
+        d.setHours(0, 0, 0, 0);
+        return d;
+    };
+
+    switch (period) {
+        case 'today':
+            start.setHours(0, 0, 0, 0);
+            end.setHours(23, 59, 59, 999);
+            break;
+        case 'yesterday':
+            start.setDate(end.getDate() - 1);
+            start.setHours(0, 0, 0, 0);
+            end.setDate(end.getDate() - 1);
+            end.setHours(23, 59, 59, 999);
+            break;
+        case '7d':
+            start.setDate(end.getDate() - 6);
+            break;
+        case '30d':
+            start.setDate(end.getDate() - 29);
+            break;
+        case 'this_month':
+            start.setTime(setToMonth(end).getTime());
+            break;
+        case 'last_month': {
+            const s = setToMonth(end, -1);
+            start.setTime(s.getTime());
+            const e = setToMonth(end, 0);
+            e.setDate(0);
+            e.setHours(23, 59, 59, 999);
+            end.setTime(e.getTime());
+            break;
+        }
+        case 'this_quarter':
+            start.setTime(setToQuarterStart(end).getTime());
+            break;
+        case 'last_quarter': {
+            const s = setToQuarterStart(end, -1);
+            start.setTime(s.getTime());
+            const e = setToQuarterStart(end, 0);
+            e.setDate(0);
+            e.setHours(23, 59, 59, 999);
+            end.setTime(e.getTime());
+            break;
+        }
+        case 'this_year':
+            start.setTime(setToYear(end).getTime());
+            break;
+        case 'last_year': {
+            const s = setToYear(end, -1);
+            start.setTime(s.getTime());
+            const e = setToYear(end, 0);
+            e.setDate(0);
+            e.setHours(23, 59, 59, 999);
+            end.setTime(e.getTime());
+            break;
+        }
+        case 'all':
+            start.setFullYear(1970, 0, 1);
+            start.setHours(0, 0, 0, 0);
+            break;
+        default:
+            start.setDate(end.getDate() - 6);
+    }
 
     const to = end.toISOString().slice(0, 10);
     const from = start.toISOString().slice(0, 10);
@@ -30,15 +122,24 @@ function formatPercent(value: number) {
 }
 
 const PERIOD_LABELS: Record<Period, string> = {
-    '7d': 'Últimos 7 dias',
-    '30d': 'Últimos 30 dias',
-    '90d': 'Últimos 90 dias',
+    all: 'Todo periodo',
+    today: 'Hoje',
+    yesterday: 'Ontem',
+    '7d': 'Ultimos 7 dias',
+    '30d': 'Ultimos 30 dias',
+    this_month: 'Este mes',
+    last_month: 'Mes passado',
+    this_quarter: 'Este trimestre',
+    last_quarter: 'Ultimo trimestre',
+    this_year: 'Este ano',
+    last_year: 'Ano passado',
 };
 
 const AnalyticsPage: React.FC = () => {
-    const [period, setPeriod] = useState<Period>('7d');
+    const [period, setPeriod] = useState<Period>('30d');
     const range = useMemo(() => getDateRange(period), [period]);
     const { data, isLoading, isError, error } = useAnalyticsSummary(range);
+    const { data: conversions, isLoading: loadingConversions, isError: conversionsError } = useConversions(range);
 
     const metrics = data?.metrics || {
         spend: 0,
@@ -72,27 +173,25 @@ const AnalyticsPage: React.FC = () => {
             <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
                     <p className="text-sm text-slate-500 dark:text-slate-400">Analytics • Funil unificado</p>
-                    <h1 className="text-3xl font-bold text-slate-900 dark:text-white font-display">Mídia + Conversões</h1>
+                    <h1 className="text-3xl font-bold text-slate-900 dark:text-white font-display">Midia + Conversoes</h1>
                     <p className="text-slate-500 dark:text-slate-400 mt-1">
-                        Período: {range.from} até {range.to}
+                        Periodo: {range.from} ate {range.to}
                     </p>
                 </div>
-                <div className="flex gap-2">
-                    {(['7d', '30d', '90d'] as Period[]).map((p) => {
-                        const active = p === period;
-                        return (
-                            <button
-                                key={p}
-                                onClick={() => setPeriod(p)}
-                                className={`px-3 py-2 rounded-lg text-sm font-medium border transition-colors ${active
-                                    ? 'border-primary-500 bg-primary-500/10 text-primary-700 dark:text-primary-300'
-                                    : 'border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-white/20'
-                                    }`}
-                            >
+                <div>
+                    <label className="sr-only" htmlFor="period-select">Selecione periodo</label>
+                    <select
+                        id="period-select"
+                        value={period}
+                        onChange={(e) => setPeriod(e.target.value as Period)}
+                        className="px-3 py-2 rounded-lg text-sm font-medium border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 focus-visible-ring"
+                    >
+                        {(Object.keys(PERIOD_LABELS) as Period[]).map((p) => (
+                            <option key={p} value={p}>
                                 {PERIOD_LABELS[p]}
-                            </button>
-                        );
-                    })}
+                            </option>
+                        ))}
+                    </select>
                 </div>
             </div>
 
@@ -146,7 +245,7 @@ const AnalyticsPage: React.FC = () => {
                 <StatCard
                     title="CPM"
                     value={formatCurrency(metrics.cpm || 0)}
-                    subtext={`Impressões ${formatNumber(metrics.impressions)}`}
+                    subtext={`Impressoes ${formatNumber(metrics.impressions)}`}
                     subtextPositive
                     icon={LineChart}
                     color="bg-amber-500"
@@ -158,12 +257,12 @@ const AnalyticsPage: React.FC = () => {
                     <div className="flex items-center justify-between mb-4">
                         <div>
                             <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Funil</h3>
-                            <p className="text-sm text-slate-500 dark:text-slate-400">Eventos consolidados no período</p>
+                            <p className="text-sm text-slate-500 dark:text-slate-400">Eventos consolidados no periodo</p>
                         </div>
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                         {[
-                            { label: 'Impressões', value: funnel.impression || metrics.impressions },
+                            { label: 'Impressoes', value: funnel.impression || metrics.impressions },
                             { label: 'Cliques', value: funnel.click || metrics.clicks },
                             { label: 'Leads', value: funnel.lead || metrics.leads },
                             { label: 'MQLs', value: funnel.mql || metrics.mqls },
@@ -181,8 +280,8 @@ const AnalyticsPage: React.FC = () => {
                 <div className="glass rounded-xl border border-slate-200 dark:border-white/10 p-5">
                     <div className="flex items-center justify-between mb-3">
                         <div>
-                            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Qualidade de Mídia</h3>
-                            <p className="text-sm text-slate-500 dark:text-slate-400">Indicadores rápidos</p>
+                            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Qualidade de Midia</h3>
+                            <p className="text-sm text-slate-500 dark:text-slate-400">Indicadores rapidos</p>
                         </div>
                     </div>
                     <ul className="space-y-3">
@@ -206,9 +305,21 @@ const AnalyticsPage: React.FC = () => {
                 </div>
             </div>
 
+            <div>
+                {conversionsError && (
+                    <div className="p-3 rounded-lg border border-amber-200 dark:border-amber-900/40 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-200 mb-4">
+                        Erro ao carregar conversoes.
+                    </div>
+                )}
+                <ConversionsTable conversions={conversions || []} />
+                {loadingConversions && (
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">Carregando conversoes...</p>
+                )}
+            </div>
+
             {!isLoading && !hasData && (
                 <div className="p-4 rounded-xl border border-slate-200 dark:border-white/10 bg-white/60 dark:bg-white/5 text-slate-600 dark:text-slate-300">
-                    Nenhum dado de mídia/funil para o período selecionado. Importe dados ou ajuste o intervalo.
+                    Nenhum dado de midia/funil para o periodo selecionado. Importe dados ou ajuste o intervalo.
                 </div>
             )}
         </div>

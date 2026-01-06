@@ -146,7 +146,56 @@ async function sendToGoogle(payload: GoogleConversionPayload, payloadHash: strin
   if (!payload.customerId || !payload.conversionActionId || !payload.developerToken || !payload.accessToken) {
     return { status: 'skipped', reason: 'missing_google_credentials', payloadHash };
   }
-  return { status: 'pending', reason: 'google_dispatch_not_implemented', payloadHash };
+
+  const gclid = payload.gclid || payload.clickId;
+  if (!gclid) {
+    return { status: 'skipped', reason: 'missing_gclid', payloadHash };
+  }
+
+  const conversionDateTime = payload.eventTime || new Date().toISOString();
+  const conversionActionResource = `customers/${payload.customerId}/conversionActions/${payload.conversionActionId}`;
+
+  const body = {
+    partialFailure: true,
+    validateOnly: false,
+    conversions: [
+      {
+        gclid,
+        conversionAction: conversionActionResource,
+        conversionDateTime,
+        conversionValue: payload.amount ?? 0,
+        currencyCode: payload.currency || 'BRL',
+        orderId: payloadHash,
+      },
+    ],
+  };
+
+  try {
+    const res = await fetch(`https://googleads.googleapis.com/v15/customers/${payload.customerId}:uploadClickConversions`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        authorization: `Bearer ${payload.accessToken}`,
+        'developer-token': payload.developerToken,
+        ...(payload.loginCustomerId ? { 'login-customer-id': payload.loginCustomerId } : {}),
+      },
+      body: JSON.stringify(body),
+    });
+    const json = await res.json().catch(() => null);
+
+    if (!res.ok) {
+      return { status: 'error', external_response: json, payloadHash, reason: 'google_http_' + res.status };
+    }
+
+    const partialFailure = json?.partialFailureError;
+    if (partialFailure) {
+      return { status: 'error', external_response: json, payloadHash, reason: 'google_partial_failure' };
+    }
+
+    return { status: 'sent', external_response: json, payloadHash };
+  } catch (err: any) {
+    return { status: 'error', external_response: { message: err?.message || String(err) }, payloadHash };
+  }
 }
 
 export async function handleMetaConversion(admin: SupabaseClient, payload: MetaConversionPayload) {

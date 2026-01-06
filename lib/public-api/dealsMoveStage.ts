@@ -2,6 +2,7 @@ import { createStaticAdminClient } from '@/lib/supabase/server';
 import { normalizeEmail, normalizePhone } from '@/lib/public-api/sanitize';
 import { resolveBoardId } from '@/lib/public-api/resolve';
 import { sanitizeUUID } from '@/lib/supabase/utils';
+import { handleMetaConversion, handleGoogleConversion, type ConversionEventType } from '@/lib/conversions';
 
 export type MoveStageTarget =
   | { to_stage_id: string }
@@ -57,7 +58,7 @@ export async function moveStageByDealId(opts: {
 
   const { data: deal, error: dealError } = await sb
     .from('deals')
-    .select('id,board_id,stage_id')
+    .select('id,board_id,stage_id,contact_id,value')
     .eq('organization_id', opts.organizationId)
     .is('deleted_at', null)
     .eq('id', dealId)
@@ -68,7 +69,7 @@ export async function moveStageByDealId(opts: {
   const boardId = (deal as any).board_id as string;
   const { data: boardCfg, error: boardCfgError } = await sb
     .from('boards')
-    .select('won_stage_id,lost_stage_id')
+    .select('won_stage_id,lost_stage_id,project_id')
     .eq('organization_id', opts.organizationId)
     .is('deleted_at', null)
     .eq('id', boardId)
@@ -116,6 +117,14 @@ export async function moveStageByDealId(opts: {
     .maybeSingle();
   if (error) return { ok: false as const, status: 500, body: { error: error.message, code: 'DB_ERROR' } };
   if (!data) return { ok: false as const, status: 404, body: { error: 'Deal not found', code: 'NOT_FOUND' } };
+  await triggerAutoConversion({
+    organizationId: opts.organizationId,
+    projectId: (boardCfg as any)?.project_id || null,
+    deal: data as any,
+    stageId,
+    stageLabel: opts.target.to_stage_label || null,
+    mark: opts.mark ?? null,
+  });
   return { ok: true as const, status: 200, body: { data, action: 'moved' } };
 }
 
@@ -140,7 +149,7 @@ export async function moveStageByIdentity(opts: {
   const sb = createStaticAdminClient();
   const { data: boardCfg, error: boardCfgError } = await sb
     .from('boards')
-    .select('won_stage_id,lost_stage_id')
+    .select('won_stage_id,lost_stage_id,project_id')
     .eq('organization_id', opts.organizationId)
     .is('deleted_at', null)
     .eq('id', boardId)
@@ -220,6 +229,72 @@ export async function moveStageByIdentity(opts: {
     .maybeSingle();
   if (updateError) return { ok: false as const, status: 500, body: { error: updateError.message, code: 'DB_ERROR' } };
   if (!updated) return { ok: false as const, status: 404, body: { error: 'Deal not found', code: 'NOT_FOUND' } };
+  await triggerAutoConversion({
+    organizationId: opts.organizationId,
+    projectId: (boardCfg as any)?.project_id || null,
+    deal: updated as any,
+    stageId,
+    stageLabel: opts.target.to_stage_label || null,
+    mark: opts.mark ?? null,
+  });
   return { ok: true as const, status: 200, body: { data: updated, action: 'moved' } };
+}
+
+function mapStageToEvent(stageLabel?: string | null, mark?: 'won' | 'lost' | null, wonStageId?: string | null, targetStageId?: string | null): ConversionEventType | null {
+  if (mark === 'won') return 'sale';
+  if (!stageLabel) return null;
+  const label = stageLabel.toLowerCase();
+  if (label.includes('mql')) return 'mql';
+  if (label.includes('opportunity') || label.includes('oportun')) return 'opportunity';
+  if (label.includes('won') || label.includes('venda') || label.includes('sale')) return 'sale';
+  if (label.includes('lead')) return 'lead';
+  if (wonStageId && targetStageId && wonStageId === targetStageId) return 'sale';
+  return null;
+}
+
+async function triggerAutoConversion(params: {
+  organizationId: string;
+  projectId: string | null;
+  deal: { id: string; contact_id: string | null; value?: number | null };
+  stageId: string;
+  stageLabel?: string | null;
+  mark?: 'won' | 'lost' | null;
+}) {
+  const eventType = mapStageToEvent(params.stageLabel, params.mark, null, params.stageId);
+  if (!eventType) return;
+
+  const admin = createStaticAdminClient();
+  const { data: contact } = await admin
+    .from('contacts')
+    .select('id,email,phone')
+    .eq('organization_id', params.organizationId)
+    .eq('id', params.deal.contact_id ?? '')
+    .maybeSingle();
+
+  const amount = typeof params.deal.value === 'number' ? params.deal.value : undefined;
+
+  // Meta
+  await handleMetaConversion(admin, {
+    platform: 'meta',
+    organizationId: params.organizationId,
+    projectId: params.projectId || params.organizationId,
+    leadId: null,
+    eventType,
+    amount,
+    currency: 'BRL',
+    email: (contact as any)?.email ?? null,
+    phone: (contact as any)?.phone ?? null,
+  });
+
+  // Google (placeholder dispatch)
+  await handleGoogleConversion(admin, {
+    platform: 'google',
+    organizationId: params.organizationId,
+    projectId: params.projectId || params.organizationId,
+    leadId: null,
+    eventType,
+    amount,
+    currency: 'BRL',
+  });
 }
 

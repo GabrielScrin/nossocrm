@@ -1,15 +1,15 @@
-/**
- * @fileoverview Layout Principal da Aplicação
+﻿/**
+ * @fileoverview Layout Principal da AplicaÃ§Ã£o
  *
- * Componente de layout que fornece estrutura base para todas as páginas,
- * incluindo sidebar de navegação, header e área de conteúdo.
+ * Componente de layout que fornece estrutura base para todas as pÃ¡ginas,
+ * incluindo sidebar de navegaÃ§Ã£o, header e Ã¡rea de conteÃºdo.
  *
  * @module components/Layout
  *
  * Recursos de Acessibilidade:
- * - Skip link para navegação por teclado
- * - Navegação com aria-current para página ativa
- * - Ícones decorativos com aria-hidden
+ * - Skip link para navegaÃ§Ã£o por teclado
+ * - NavegaÃ§Ã£o com aria-current para pÃ¡gina ativa
+ * - Ãcones decorativos com aria-hidden
  * - Suporte a prefetch em hover/focus
  *
  * @example
@@ -43,12 +43,15 @@ import {
   Bug,
   CheckSquare,
   PanelLeftClose,
-  PanelLeftOpen
+  PanelLeftOpen,
+  MessageCircle,
+  Instagram,
+  MessageSquare,
+  Bot
 } from 'lucide-react';
 import { useCRM } from '../context/CRMContext';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { prefetchRoute, RouteName } from '@/lib/prefetch';
 import { isDebugMode, enableDebugMode, disableDebugMode } from '@/lib/debug';
 import { SkipLink } from '@/lib/a11y';
 import { useResponsiveMode } from '@/hooks/useResponsiveMode';
@@ -59,75 +62,22 @@ import { BottomNav, MoreMenuSheet, NavigationRail } from '@/components/navigatio
 import { UIChat } from './ai/UIChat';
 
 import { NotificationPopover } from './notifications/NotificationPopover';
+import { NavGroup, type NavChild } from './navigation/NavGroup';
 
 /**
  * Props do componente Layout
  * @interface LayoutProps
- * @property {React.ReactNode} children - Conteúdo da página
+ * @property {React.ReactNode} children - ConteÃºdo da pÃ¡gina
  */
 interface LayoutProps {
   children: React.ReactNode;
 }
 
 /**
- * Item de navegação da sidebar
+ * Layout principal da aplicaÃ§Ã£o
  *
- * @param props - Props do item de navegação
- * @param props.to - Rota de destino
- * @param props.icon - Componente de ícone Lucide
- * @param props.label - Label exibido
- * @param props.prefetch - Nome da rota para prefetch
- * @param props.clickedPath - Path que foi clicado (para manter highlight durante transição)
- * @param props.onItemClick - Callback quando o item é clicado
- */
-const NavItem = ({
-  to,
-  icon: Icon,
-  label,
-  prefetch,
-  clickedPath,
-  onItemClick,
-}: {
-  to: string;
-  icon: React.ComponentType<{ size?: number; className?: string }>;
-  label: string;
-  prefetch?: RouteName;
-  clickedPath?: string;
-  onItemClick?: (path: string) => void;
-}) => {
-  const pathname = usePathname();
-  const isActive = pathname === to || (to === '/boards' && pathname === '/pipeline');
-  const wasJustClicked = clickedPath === to;
-
-  // If user clicked on a DIFFERENT item, immediately deactivate this one
-  // This prevents the delay showing both items as active
-  const anotherItemWasClicked = clickedPath && clickedPath !== to;
-  const isActuallyActive = anotherItemWasClicked ? false : (isActive || wasJustClicked);
-
-  return (
-    <Link
-      href={to}
-      onMouseEnter={prefetch ? () => prefetchRoute(prefetch) : undefined}
-      onFocus={prefetch ? () => prefetchRoute(prefetch) : undefined}
-      onClick={() => onItemClick?.(to)}
-      className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium focus-visible-ring
-    ${isActuallyActive
-          ? 'bg-primary-500/10 text-primary-600 dark:text-primary-400 border border-primary-200 dark:border-primary-900/50'
-          : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white'
-        }`}
-    >
-      <Icon size={20} className={isActuallyActive ? 'text-primary-500' : ''} aria-hidden="true" />
-      <span className="font-display tracking-wide">{label}</span>
-    </Link>
-  );
-};
-
-
-/**
- * Layout principal da aplicação
- *
- * Fornece estrutura com sidebar fixa, header responsivo e área de conteúdo.
- * Inclui navegação, controles de tema e acesso ao assistente de IA.
+ * Fornece estrutura com sidebar fixa, header responsivo e Ã¡rea de conteÃºdo.
+ * Inclui navegaÃ§Ã£o, controles de tema e acesso ao assistente de IA.
  *
  * @param {LayoutProps} props - Props do componente
  * @returns {JSX.Element} Estrutura de layout completa
@@ -153,7 +103,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   }, []);
 
   // If the user signed out (or session expired), leave protected shell ASAP.
-  // This prevents rendering fallbacks like "Usuário" while unauthenticated.
+  // This prevents rendering fallbacks like "UsuÃ¡rio" while unauthenticated.
   useEffect(() => {
     if (loading) return;
     if (!user) router.replace('/login');
@@ -266,54 +216,54 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           )}
         </div>
 
-        <nav className={`flex-1 p-4 space-y-2 flex flex-col ${sidebarCollapsed ? 'items-center px-2' : ''}`} aria-label="Navegação do sistema">
+        <nav className={"flex-1 p-4 space-y-3 flex flex-col " + (sidebarCollapsed ? 'items-center px-2' : '')} aria-label="Navegação do sistema">
           {[
-            { to: '/inbox', icon: Inbox, label: 'Inbox', prefetch: 'inbox' as const },
-            { to: '/dashboard', icon: LayoutDashboard, label: 'Visão Geral', prefetch: 'dashboard' as const },
-            { to: '/boards', icon: KanbanSquare, label: 'Boards', prefetch: 'boards' as const },
-            { to: '/contacts', icon: Users, label: 'Contatos', prefetch: 'contacts' as const },
-            { to: '/activities', icon: CheckSquare, label: 'Atividades', prefetch: 'activities' as const },
-            { to: '/analytics', icon: BarChart3, label: 'Analytics', prefetch: 'analytics' as const },
-            { to: '/reports', icon: BarChart3, label: 'Relatórios', prefetch: 'reports' as const },
-            { to: '/settings', icon: Settings, label: 'Configurações', prefetch: 'settings' as const },
-          ].map((item) => {
-            if (sidebarCollapsed) {
-              return (
-                <Link
-                  key={item.to}
-                  href={item.to}
-                  onMouseEnter={() => prefetchRoute(item.prefetch)}
-                  onClick={() => setClickedPath(item.to)}
-                  className={(() => {
-                    const isActive = pathname === item.to || (item.to === '/boards' && pathname === '/pipeline');
-                    const wasJustClicked = clickedPath === item.to;
-                    // If user clicked on a DIFFERENT item, immediately deactivate this one
-                    const anotherItemWasClicked = clickedPath && clickedPath !== item.to;
-                    const isActuallyActive = anotherItemWasClicked ? false : (isActive || wasJustClicked);
-                    return `w-10 h-10 rounded-lg flex items-center justify-center ${isActuallyActive
-                      ? 'bg-primary-500/10 text-primary-600 dark:text-primary-400 border border-primary-200 dark:border-primary-900/50'
-                      : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white'
-                      }`;
-                  })()}
-                  title={item.label}
-                >
-                  <item.icon size={20} />
-                </Link>
-              );
-            }
-
-            return (
-              <NavItem
-                key={item.to}
-                to={item.to}
-                icon={item.icon}
-                label={item.label}
-                prefetch={item.prefetch}
-                clickedPath={clickedPath}
-                onItemClick={setClickedPath}
-              />
-            );
-          })}
+            {
+              label: 'CRM',
+              icon: LayoutDashboard,
+              items: [
+                { to: '/inbox', icon: Inbox, label: 'Inbox', prefetch: 'inbox' as const },
+                { to: '/dashboard', icon: LayoutDashboard, label: 'Visão Geral', prefetch: 'dashboard' as const },
+                { to: '/boards', icon: KanbanSquare, label: 'Boards', prefetch: 'boards' as const, aliases: ['/pipeline'] },
+                { to: '/activities', icon: CheckSquare, label: 'Atividades', prefetch: 'activities' as const },
+                { to: '/reports', icon: BarChart3, label: 'Relatórios', prefetch: 'reports' as const },
+              ],
+            },
+            {
+              label: 'Contatos',
+              icon: Users,
+              items: [{ to: '/contacts', icon: Users, label: 'Contatos', prefetch: 'contacts' as const }],
+            },
+            {
+              label: 'Tráfego',
+              icon: BarChart3,
+              items: [{ to: '/analytics', icon: BarChart3, label: 'Analytics', prefetch: 'analytics' as const }],
+            },
+            {
+              label: 'Agente de IA',
+              icon: Bot,
+              items: [{ to: '/ai', icon: Sparkles, label: 'Central de I.A' }],
+            },
+            { label: 'WhatsApp', icon: MessageCircle, items: [] },
+            { label: 'Instagram', icon: Instagram, items: [] },
+            { label: 'Live Chat', icon: MessageSquare, items: [] },
+            {
+              label: 'Configurações',
+              icon: Settings,
+              items: [{ to: '/settings', icon: Settings, label: 'Configurações', prefetch: 'settings' as const }],
+            },
+          ].map((group) => (
+            <NavGroup
+              key={group.label}
+              label={group.label}
+              icon={group.icon}
+              items={group.items as NavChild[]}
+              activePath={pathname}
+              collapsed={sidebarCollapsed}
+              onNavigate={setClickedPath}
+              clickedPath={clickedPath}
+            />
+          ))}
         </nav>
 
         {/* Sidebar Toggle Button (Footer) - Only visible when collapsed */}
@@ -358,7 +308,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <>
                   <div className="flex-1 min-w-0 text-left">
                     <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
-                      {profile?.nickname || profile?.first_name || profile?.email?.split('@')[0] || 'Usuário'}
+                      {profile?.nickname || profile?.first_name || profile?.email?.split('@')[0] || 'UsuÃ¡rio'}
                     </p>
                     <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
                       {profile?.email || ''}

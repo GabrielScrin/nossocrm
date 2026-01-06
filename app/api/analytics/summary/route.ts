@@ -52,26 +52,19 @@ export async function GET(req: Request) {
 
     const { from, to, projectId } = parseDateRange(new URL(req.url));
 
-    const metricsPromise = supabase
-        .from('ad_metrics_daily')
-        .select(`
-            spend:sum(spend),
-            impressions:sum(impressions),
-            clicks:sum(clicks),
-            leads:sum(leads),
-            mqls:sum(conversions_mql),
-            opportunities:sum(conversions_opportunity),
-            sales:sum(conversions_sale),
-            revenue:sum(revenue)
-        `)
-        .eq('organization_id', profile.organization_id)
-        .gte('date', from)
-        .lte('date', to)
-        .limit(1);
-
-    if (projectId) {
-        metricsPromise.eq('project_id', projectId);
-    }
+    // Fetch raw rows and aggregate in Node to avoid PostgREST relationship/aggregate parsing issues
+    const metricsPromise = (() => {
+        const query = supabase
+            .from('ad_metrics_daily')
+            .select(
+                'spend, impressions, clicks, leads, conversions_mql, conversions_opportunity, conversions_sale, revenue'
+            )
+            .eq('organization_id', profile.organization_id)
+            .gte('date', from)
+            .lte('date', to);
+        if (projectId) query.eq('project_id', projectId);
+        return query;
+    })();
 
     const funnelPromise = (() => {
         const query = supabase
@@ -92,16 +85,38 @@ export async function GET(req: Request) {
     if (metricsError) return json({ error: metricsError.message }, 500);
     if (funnelError) return json({ error: funnelError.message }, 500);
 
-    const agg = (metricsData && metricsData[0]) || {};
+    const agg = (metricsData || []).reduce(
+        (acc, row) => {
+            acc.spend += safeNumber((row as any).spend);
+            acc.impressions += safeNumber((row as any).impressions);
+            acc.clicks += safeNumber((row as any).clicks);
+            acc.leads += safeNumber((row as any).leads);
+            acc.mqls += safeNumber((row as any).conversions_mql);
+            acc.opportunities += safeNumber((row as any).conversions_opportunity);
+            acc.sales += safeNumber((row as any).conversions_sale);
+            acc.revenue += safeNumber((row as any).revenue);
+            return acc;
+        },
+        {
+            spend: 0,
+            impressions: 0,
+            clicks: 0,
+            leads: 0,
+            mqls: 0,
+            opportunities: 0,
+            sales: 0,
+            revenue: 0,
+        }
+    );
 
-    const spend = safeNumber((agg as any).spend);
-    const impressions = safeNumber((agg as any).impressions);
-    const clicks = safeNumber((agg as any).clicks);
-    const leads = safeNumber((agg as any).leads);
-    const mqls = safeNumber((agg as any).mqls);
-    const opportunities = safeNumber((agg as any).opportunities);
-    const sales = safeNumber((agg as any).sales);
-    const revenue = safeNumber((agg as any).revenue);
+    const spend = agg.spend;
+    const impressions = agg.impressions;
+    const clicks = agg.clicks;
+    const leads = agg.leads;
+    const mqls = agg.mqls;
+    const opportunities = agg.opportunities;
+    const sales = agg.sales;
+    const revenue = agg.revenue;
 
     const ctr = impressions > 0 ? (clicks / impressions) * 100 : 0;
     const cpc = clicks > 0 ? spend / clicks : 0;
