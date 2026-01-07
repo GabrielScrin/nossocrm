@@ -346,3 +346,11 @@ body {
     opacity: 0;
   }
 }
+
+/* Subtle scrollbars hidden for custom containers */
+.no-scrollbar {
+  scrollbar-width: none; /* Firefox */
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}

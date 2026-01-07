@@ -216,7 +216,13 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           )}
         </div>
 
-                                <nav className={"flex-1 p-4 space-y-3 flex flex-col " + (sidebarCollapsed ? "items-center px-2" : "")} aria-label="Navegacao do sistema">
+                                <nav
+                                  className={
+                                    "flex-1 p-4 space-y-3 flex flex-col overflow-y-auto no-scrollbar " +
+                                    (sidebarCollapsed ? "items-center px-2" : "")
+                                  }
+                                  aria-label="Navegacao do sistema"
+                                >
           {[
             {
               label: "CRM",
