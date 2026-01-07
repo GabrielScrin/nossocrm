@@ -19,6 +19,14 @@ export type Message = {
     created_at: string;
 };
 
+export type WhatsappAccount = {
+    id: string;
+    phone_number: string;
+    status: string | null;
+    created_at: string | null;
+    waba_business_account_id?: string | null;
+};
+
 export function useWhatsappConversations() {
     return useQuery({
         queryKey: queryKeys.whatsapp.conversations(),
@@ -108,3 +116,36 @@ export function useWhatsappLogs() {
     });
 }
 
+export function useWhatsappAccounts() {
+    return useQuery({
+        queryKey: queryKeys.whatsapp.accounts(),
+        queryFn: async () => {
+            const res = await fetch('/api/whatsapp/account', { credentials: 'include' });
+            if (!res.ok) throw new Error('Falha ao carregar contas');
+            const json = await res.json();
+            return (json.accounts || []) as WhatsappAccount[];
+        },
+        staleTime: 30_000,
+    });
+}
+
+export function useDisconnectWhatsapp() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async () => {
+            const res = await fetch('/api/whatsapp/account', {
+                method: 'DELETE',
+                headers: { 'content-type': 'application/json' },
+                credentials: 'include',
+            });
+            if (!res.ok) {
+                const body = await res.json().catch(() => ({}));
+                throw new Error(body?.error || 'Falha ao desconectar');
+            }
+            return res.json();
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.whatsapp.accounts() });
+        },
+    });
+}
