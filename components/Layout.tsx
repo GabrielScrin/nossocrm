@@ -1,15 +1,15 @@
-﻿/**
- * @fileoverview Layout Principal da AplicaÃ§Ã£o
+/**
+ * @fileoverview Layout Principal da AplicaÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o
  *
- * Componente de layout que fornece estrutura base para todas as pÃ¡ginas,
- * incluindo sidebar de navegaÃ§Ã£o, header e Ã¡rea de conteÃºdo.
+ * Componente de layout que fornece estrutura base para todas as pÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ginas,
+ * incluindo sidebar de navegaÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o, header e ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rea de conteÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âºdo.
  *
  * @module components/Layout
  *
  * Recursos de Acessibilidade:
- * - Skip link para navegaÃ§Ã£o por teclado
- * - NavegaÃ§Ã£o com aria-current para pÃ¡gina ativa
- * - Ãcones decorativos com aria-hidden
+ * - Skip link para navegaÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o por teclado
+ * - NavegaÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o com aria-current para pÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡gina ativa
+ * - ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âcones decorativos com aria-hidden
  * - Suporte a prefetch em hover/focus
  *
  * @example
@@ -67,17 +67,17 @@ import { NavGroup, type NavChild } from './navigation/NavGroup';
 /**
  * Props do componente Layout
  * @interface LayoutProps
- * @property {React.ReactNode} children - ConteÃºdo da pÃ¡gina
+ * @property {React.ReactNode} children - ConteÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âºdo da pÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡gina
  */
 interface LayoutProps {
   children: React.ReactNode;
 }
 
 /**
- * Layout principal da aplicaÃ§Ã£o
+ * Layout principal da aplicaÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o
  *
- * Fornece estrutura com sidebar fixa, header responsivo e Ã¡rea de conteÃºdo.
- * Inclui navegaÃ§Ã£o, controles de tema e acesso ao assistente de IA.
+ * Fornece estrutura com sidebar fixa, header responsivo e ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rea de conteÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âºdo.
+ * Inclui navegaÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o, controles de tema e acesso ao assistente de IA.
  *
  * @param {LayoutProps} props - Props do componente
  * @returns {JSX.Element} Estrutura de layout completa
@@ -103,7 +103,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   }, []);
 
   // If the user signed out (or session expired), leave protected shell ASAP.
-  // This prevents rendering fallbacks like "UsuÃ¡rio" while unauthenticated.
+  // This prevents rendering fallbacks like "UsuÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rio" while unauthenticated.
   useEffect(() => {
     if (loading) return;
     if (!user) router.replace('/login');
@@ -216,41 +216,53 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           )}
         </div>
 
-        <nav className={"flex-1 p-4 space-y-3 flex flex-col " + (sidebarCollapsed ? 'items-center px-2' : '')} aria-label="Navegação do sistema">
+                                <nav className={"flex-1 p-4 space-y-3 flex flex-col " + (sidebarCollapsed ? "items-center px-2" : "")} aria-label="Navegacao do sistema">
           {[
             {
-              label: 'CRM',
+              label: "CRM",
               icon: LayoutDashboard,
               items: [
-                { to: '/inbox', icon: Inbox, label: 'Inbox', prefetch: 'inbox' as const },
-                { to: '/dashboard', icon: LayoutDashboard, label: 'Visão Geral', prefetch: 'dashboard' as const },
-                { to: '/boards', icon: KanbanSquare, label: 'Boards', prefetch: 'boards' as const, aliases: ['/pipeline'] },
-                { to: '/activities', icon: CheckSquare, label: 'Atividades', prefetch: 'activities' as const },
-                { to: '/reports', icon: BarChart3, label: 'Relatórios', prefetch: 'reports' as const },
+                { to: "/inbox", icon: Inbox, label: "Inbox", prefetch: "inbox" as const },
+                { to: "/dashboard", icon: LayoutDashboard, label: "Visao Geral", prefetch: "dashboard" as const },
+                { to: "/boards", icon: KanbanSquare, label: "Boards", prefetch: "boards" as const, aliases: ["/pipeline"] },
+                { to: "/activities", icon: CheckSquare, label: "Atividades", prefetch: "activities" as const },
+                { to: "/reports", icon: BarChart3, label: "Relatorios", prefetch: "reports" as const },
               ],
             },
             {
-              label: 'Contatos',
+              label: "Contatos",
               icon: Users,
-              items: [{ to: '/contacts', icon: Users, label: 'Contatos', prefetch: 'contacts' as const }],
+              items: [{ to: "/contacts", icon: Users, label: "Contatos", prefetch: "contacts" as const }],
             },
             {
-              label: 'Tráfego',
+              label: "Trafego",
               icon: BarChart3,
-              items: [{ to: '/analytics', icon: BarChart3, label: 'Analytics', prefetch: 'analytics' as const }],
+              items: [{ to: "/analytics", icon: BarChart3, label: "Analytics", prefetch: "analytics" as const }],
             },
             {
-              label: 'Agente de IA',
+              label: "Agente de IA",
               icon: Bot,
-              items: [{ to: '/ai', icon: Sparkles, label: 'Central de I.A' }],
+              items: [{ to: "/ai", icon: Sparkles, label: "Central de I.A" }],
             },
-            { label: 'WhatsApp', icon: MessageCircle, items: [] },
-            { label: 'Instagram', icon: Instagram, items: [] },
-            { label: 'Live Chat', icon: MessageSquare, items: [] },
             {
-              label: 'Configurações',
+              label: "WhatsApp",
+              icon: MessageCircle,
+              items: [
+                { to: "/whatsapp", icon: MessageCircle, label: "Inbox" },
+                { to: "/whatsapp/settings", icon: Settings, label: "Configuracoes" },
+                { to: "/whatsapp/logs", icon: MessageSquare, label: "Logs" },
+              ],
+            },
+            { label: "Instagram", icon: Instagram, items: [] },
+            {
+              label: "Live Chat",
+              icon: MessageSquare,
+              items: [],
+            },
+            {
+              label: "Configuracoes",
               icon: Settings,
-              items: [{ to: '/settings', icon: Settings, label: 'Configurações', prefetch: 'settings' as const }],
+              items: [{ to: "/settings", icon: Settings, label: "Configuracoes", prefetch: "settings" as const }],
             },
           ].map((group) => (
             <NavGroup
@@ -308,7 +320,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <>
                   <div className="flex-1 min-w-0 text-left">
                     <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
-                      {profile?.nickname || profile?.first_name || profile?.email?.split('@')[0] || 'UsuÃ¡rio'}
+                      {profile?.nickname || profile?.first_name || profile?.email?.split('@')[0] || 'UsuÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rio'}
                     </p>
                     <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
                       {profile?.email || ''}
@@ -443,3 +455,4 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 };
 
 export default Layout;
+

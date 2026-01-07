@@ -50,6 +50,11 @@ export const queryKeys = {
         funnel: (params?: { projectId?: string; from?: string; to?: string }) => ['analytics', 'funnel', params] as const,
         conversions: (params?: { projectId?: string; from?: string; to?: string }) => ['analytics', 'conversions', params] as const,
     },
+
+    whatsapp: {
+        conversations: () => ['whatsapp', 'conversations'] as const,
+        messages: (conversationId: string) => ['whatsapp', 'conversations', conversationId, 'messages'] as const,
+    },
 };
 
 /**
