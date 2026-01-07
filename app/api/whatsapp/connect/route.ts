@@ -4,7 +4,7 @@ import type { NextRequest } from "next/server";
 
 /**
  * Redireciona para o OAuth do Facebook/Meta com os scopes de WhatsApp.
- * Usa META_APP_ID e META_REDIRECT_URI das variáveis de ambiente.
+ * Usa META_APP_ID e META_REDIRECT_URI das variaveis de ambiente.
  */
 export async function GET(req: NextRequest) {
   const appId = process.env.META_APP_ID;
@@ -12,13 +12,17 @@ export async function GET(req: NextRequest) {
 
   if (!appId || !redirectUri) {
     return new Response(
-      JSON.stringify({ error: "META_APP_ID e META_REDIRECT_URI não configurados" }),
+      JSON.stringify({ error: "META_APP_ID e META_REDIRECT_URI nao configurados" }),
       { status: 500, headers: { "content-type": "application/json; charset=utf-8" } }
     );
   }
 
-  const state = "wa-connect"; // poderia incluir orgId, nonce etc. se necessário
-  const scopes = "whatsapp_business_messaging,whatsapp_business_management";
+  const state = "wa-connect"; // pode incluir orgId/nonce se necessario
+  const scopes = [
+    "whatsapp_business_messaging",
+    "whatsapp_business_management",
+    "business_management",
+  ].join(",");
 
   const oauthUrl = new URL("https://www.facebook.com/v21.0/dialog/oauth");
   oauthUrl.searchParams.set("client_id", appId);
@@ -29,4 +33,3 @@ export async function GET(req: NextRequest) {
 
   return Response.redirect(oauthUrl.toString(), 302);
 }
-

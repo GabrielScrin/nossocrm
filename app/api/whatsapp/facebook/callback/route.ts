@@ -28,23 +28,66 @@ async function fetchJSON(url: string, options?: RequestInit) {
   }
 }
 
+type WabaAccount = { id: string; businessId: string };
+
+async function fetchWabas(accessToken: string): Promise<WabaAccount[]> {
+  const businessesResp = await fetchJSON(
+    `https://graph.facebook.com/v21.0/me/businesses?fields=id,name&access_token=${accessToken}`
+  );
+  const businesses = Array.isArray(businessesResp?.data) ? businessesResp.data : [];
+  const results: WabaAccount[] = [];
+  const seen = new Set<string>();
+
+  for (const business of businesses) {
+    if (!business?.id) continue;
+    const ownedResp = await fetchJSON(
+      `https://graph.facebook.com/v21.0/${business.id}/owned_whatsapp_business_accounts?fields=id,name&access_token=${accessToken}`
+    );
+    if (Array.isArray(ownedResp?.data)) {
+      for (const item of ownedResp.data) {
+        if (item?.id && !seen.has(item.id)) {
+          seen.add(item.id);
+          results.push({ id: item.id, businessId: business.id });
+        }
+      }
+    }
+
+    try {
+      const clientResp = await fetchJSON(
+        `https://graph.facebook.com/v21.0/${business.id}/client_whatsapp_business_accounts?fields=id,name&access_token=${accessToken}`
+      );
+      if (Array.isArray(clientResp?.data)) {
+        for (const item of clientResp.data) {
+          if (item?.id && !seen.has(item.id)) {
+            seen.add(item.id);
+            results.push({ id: item.id, businessId: business.id });
+          }
+        }
+      }
+    } catch (err) {
+      console.warn("Nao foi possivel listar client_whatsapp_business_accounts:", err);
+    }
+  }
+
+  return results;
+}
+
 export async function GET(req: NextRequest) {
   const url = new URL(req.url);
   const code = url.searchParams.get("code");
   const error = url.searchParams.get("error");
 
   if (error) return html(`Erro do Facebook: ${error}`, 400);
-  if (!code) return html("Código ausente na resposta do Facebook", 400);
+  if (!code) return html("Codigo ausente na resposta do Facebook", 400);
 
   const appId = process.env.META_APP_ID;
   const appSecret = process.env.META_APP_SECRET;
   const redirectUri = process.env.META_REDIRECT_URI;
   if (!appId || !appSecret || !redirectUri) {
-    return html("META_APP_ID / META_APP_SECRET / META_REDIRECT_URI não configurados.", 500);
+    return html("META_APP_ID / META_APP_SECRET / META_REDIRECT_URI nao configurados.", 500);
   }
 
   try {
-    // Troca do code pelo access token
     const tokenUrl = new URL("https://graph.facebook.com/v21.0/oauth/access_token");
     tokenUrl.searchParams.set("client_id", appId);
     tokenUrl.searchParams.set("client_secret", appSecret);
@@ -53,13 +96,10 @@ export async function GET(req: NextRequest) {
 
     const tokenResp = await fetchJSON(tokenUrl.toString());
     const accessToken = tokenResp?.access_token as string;
-    if (!accessToken) throw new Error("Access token não retornado");
+    if (!accessToken) throw new Error("Access token nao retornado");
 
-    // Busca WABA e telefone
-    const wabaResp = await fetchJSON(
-      `https://graph.facebook.com/v21.0/me/whatsapp_business_accounts?access_token=${accessToken}`
-    );
-    const wabaId = wabaResp?.data?.[0]?.id as string | undefined;
+    const wabaList = await fetchWabas(accessToken);
+    const wabaId = wabaList[0]?.id as string | undefined;
     if (!wabaId) throw new Error("Nenhuma conta WhatsApp Business encontrada");
 
     const phonesResp = await fetchJSON(
@@ -67,10 +107,9 @@ export async function GET(req: NextRequest) {
     );
     const phone = phonesResp?.data?.[0];
     if (!phone?.id || !phone?.display_phone_number) {
-      throw new Error("Nenhum número de WhatsApp ativo encontrado");
+      throw new Error("Nenhum numero de WhatsApp ativo encontrado");
     }
 
-    // Assina eventos no número (subscribed_apps)
     try {
       await fetchJSON(`https://graph.facebook.com/v21.0/${phone.id}/subscribed_apps`, {
         method: "POST",
@@ -81,12 +120,11 @@ export async function GET(req: NextRequest) {
       console.warn("Falha ao assinar subscribed_apps (seguindo mesmo assim):", err);
     }
 
-    // Recupera usuário logado (cookies)
     const supabase = await createClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (!user) return html("Usuário não autenticado", 401);
+    if (!user) return html("Usuario nao autenticado", 401);
 
     const { data: profile } = await supabase
       .from("profiles")
@@ -113,11 +151,10 @@ export async function GET(req: NextRequest) {
       );
 
     return html(
-      `Conta conectada com sucesso! Número: ${phone.display_phone_number}. Use o verify_token gerado para validar o webhook.`,
+      `Conta conectada com sucesso! Numero: ${phone.display_phone_number}. Use o verify_token gerado para validar o webhook.`,
       200
     );
   } catch (err) {
     return html(err instanceof Error ? err.message : "Erro desconhecido", 500);
   }
 }
-
