@@ -1,3 +1,5 @@
+"use client";
+
 import React from 'react';
 import { useWhatsappLogs } from './hooks';
 
@@ -49,4 +51,3 @@ export const WhatsAppLogsPage: React.FC = () => {
         </div>
     );
 };
-

@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useMemo, useState } from 'react';
 import { Loader2, Send, Bot, User, AlertTriangle } from 'lucide-react';
 import {
