@@ -31,11 +31,13 @@ export async function GET() {
             last_message_at,
             status,
             contact:contact_id ( id, name ),
-            whatsapp_messages ( text, direction, created_at order=created_at.desc limit=1 )
+            whatsapp_messages ( id, text, direction, created_at )
         `
         )
         .eq('organization_id', profile.organization_id)
         .order('last_message_at', { ascending: false })
+        .order('created_at', { ascending: false, foreignTable: 'whatsapp_messages' })
+        .limit(1, { foreignTable: 'whatsapp_messages' })
         .limit(50);
 
     if (error) return json({ error: error.message }, 500);
