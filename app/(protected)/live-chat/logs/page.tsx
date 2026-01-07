@@ -1,5 +1,3 @@
-"use client";
-
 import { WhatsAppLogsPage } from '@/features/whatsapp/LogsPage';
 
 export const dynamic = 'force-dynamic';

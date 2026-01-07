@@ -1,5 +1,3 @@
-"use client";
-
 import { WhatsAppSettingsPage } from '@/features/whatsapp/SettingsPage';
 
 export const dynamic = 'force-dynamic';
