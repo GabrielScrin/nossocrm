@@ -8,10 +8,19 @@ type WhatsAppMessage = {
     type?: string;
 };
 
+type WhatsAppStatus = {
+    id: string;
+    status?: string;
+    timestamp?: string;
+    recipient_id?: string;
+    errors?: { code?: number; title?: string; message?: string; error_data?: unknown }[];
+};
+
 type WebhookChange = {
     value?: {
         metadata?: { phone_number_id?: string; display_phone_number?: string };
         messages?: WhatsAppMessage[];
+        statuses?: WhatsAppStatus[];
     };
 };
 
@@ -152,6 +161,8 @@ async function insertMessage(params: {
     type?: string;
     raw?: any;
     ts?: string;
+    status?: string;
+    error?: string | null;
 }) {
     const admin = createStaticAdminClient();
     const sentAt = params.ts ? new Date(Number(params.ts) * 1000) : undefined;
@@ -165,6 +176,8 @@ async function insertMessage(params: {
                 wa_message_id: params.wa_message_id,
                 text: params.text,
                 type: params.type || 'text',
+                status: params.status || null,
+                error: params.error ?? null,
                 raw: params.raw ?? null,
                 received_at: params.direction === 'in' ? sentAt : null,
                 sent_at: params.direction === 'out' ? sentAt : null,
@@ -179,6 +192,31 @@ async function insertMessage(params: {
         .update({ last_message_at: sentAt || new Date() })
         .eq('id', params.conversation_id)
         .eq('organization_id', params.organization_id);
+}
+
+async function updateMessageStatus(params: {
+    organization_id: string;
+    wa_message_id: string;
+    status?: string;
+    error?: string | null;
+    ts?: string;
+}) {
+    const admin = createStaticAdminClient();
+    const sentAt = params.ts ? new Date(Number(params.ts) * 1000) : undefined;
+    const update: Record<string, unknown> = {
+        status: params.status || null,
+        error: params.error ?? null,
+    };
+
+    if (sentAt) {
+        update.sent_at = sentAt;
+    }
+
+    await admin
+        .from('whatsapp_messages')
+        .update(update)
+        .eq('organization_id', params.organization_id)
+        .eq('wa_message_id', params.wa_message_id);
 }
 
 async function logHandoff(params: {
@@ -220,6 +258,21 @@ export async function handleWhatsAppWebhook(payload: WebhookPayload) {
 
             const account = await getAccountByPhoneId(phoneId);
             if (!account) continue;
+
+            const statuses = change.value?.statuses || [];
+            for (const status of statuses) {
+                if (!status?.id) continue;
+                const errorMessage = status.errors?.length
+                    ? JSON.stringify(status.errors)
+                    : null;
+                await updateMessageStatus({
+                    organization_id: account.organization_id,
+                    wa_message_id: status.id,
+                    status: status.status,
+                    error: errorMessage,
+                    ts: status.timestamp,
+                });
+            }
 
             const messages = change.value?.messages || [];
             for (const msg of messages) {
@@ -270,6 +323,7 @@ export async function handleWhatsAppWebhook(payload: WebhookPayload) {
                     type: msg.type || 'text',
                     raw: msg,
                     ts: msg.timestamp,
+                    status: 'received',
                 });
             }
         }
@@ -351,5 +405,6 @@ export async function appendOutboundMessage(params: {
         wa_message_id: params.wa_message_id,
         text: params.text,
         ts: params.ts,
+        status: 'sent',
     });
 }
