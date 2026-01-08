@@ -55,6 +55,8 @@ export const queryKeys = {
         conversations: () => ['whatsapp', 'conversations'] as const,
         messages: (conversationId: string) => ['whatsapp', 'conversations', conversationId, 'messages'] as const,
         accounts: () => ['whatsapp', 'accounts'] as const,
+        logs: () => ['whatsapp', 'logs'] as const,
+        messageLogs: () => ['whatsapp', 'messages', 'logs'] as const,
     },
 };
 

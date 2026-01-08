@@ -97,7 +97,7 @@ export function useToggleWhatsappAI() {
 
 export function useWhatsappLogs() {
     return useQuery({
-        queryKey: ['whatsapp', 'logs'],
+        queryKey: queryKeys.whatsapp.logs(),
         queryFn: async () => {
             const res = await fetch('/api/whatsapp/logs', { credentials: 'include' });
             if (!res.ok) throw new Error('Falha ao carregar logs');
@@ -110,6 +110,27 @@ export function useWhatsappLogs() {
                 createdAt: string;
                 conversation: { id: string; phoneNumber: string; contactName?: string | null } | null;
                 by?: string | null;
+            }[];
+        },
+        staleTime: 10_000,
+    });
+}
+
+export function useWhatsappMessageLogs() {
+    return useQuery({
+        queryKey: queryKeys.whatsapp.messageLogs(),
+        queryFn: async () => {
+            const res = await fetch('/api/whatsapp/messages/logs', { credentials: 'include' });
+            if (!res.ok) throw new Error('Falha ao carregar logs de mensagens');
+            const json = await res.json();
+            return json.logs as {
+                id: string;
+                direction: 'in' | 'out';
+                status: string | null;
+                error: string | null;
+                text: string | null;
+                occurredAt: string | null;
+                conversation: { id: string; phoneNumber: string; contactName?: string | null } | null;
             }[];
         },
         staleTime: 10_000,
